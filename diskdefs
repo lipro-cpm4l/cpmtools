@@ -381,6 +381,58 @@ diskdef 17153
   os 3
 end
 
+# robotron PC1715 SCP 624k (80*2* 16,256 4 OFS 4k DIR) 5.25"
+# setfdprm /dev/fd1 ds dd ssize=256 cyl=80 sect=16 head=2 dtr=1 fm=0
+diskdef scp624
+  seclen 256
+  tracks 160
+  sectrk 16
+  blocksize 2048
+  maxdir 128
+  skew 0
+  boottrk 4
+  os 2.2
+end
+
+# robotron PC1715 SCP 640k (80*2* 16,256 0 OFS 4k DIR) 5.25"
+# setfdprm /dev/fd1 ds dd ssize=256 cyl=80 sect=16 head=2 dtr=1 fm=0
+diskdef scp640
+  seclen 256
+  tracks 160
+  sectrk 16
+  blocksize 2048
+  maxdir 128
+  skew 0
+  boottrk 0
+  os 2.2
+end
+
+# robotron PC1715 SCP 780k (80*2* 5,1024 4 OFS 4k DIR) 5.25"
+# setfdprm /dev/fd1 ds dd ssize=1024 cyl=80 sect=5 head=2 dtr=1 fm=0
+diskdef scp780
+  seclen 1024
+  tracks 160
+  sectrk 5
+  blocksize 2048
+  maxdir 128
+  skew 0
+  boottrk 4
+  os 2.2
+end
+
+# robotron PC1715 SCP 800k (80*2* 5,1024 0 OFS 4k DIR) 5.25"
+# setfdprm /dev/fd1 ds dd ssize=1024 cyl=80 sect=5 head=2 dtr=1 fm=0
+diskdef scp800
+  seclen 1024
+  tracks 160
+  sectrk 5
+  blocksize 2048
+  maxdir 128
+  skew 0
+  boottrk 0
+  os 2.2
+end
+
 # Visual Technology Visual 1050 computer
 diskdef v1050
   seclen 512
