@@ -43,6 +43,18 @@ diskdef pc1.2m
   os 3
 end
 
+# CP/M 86 on 1.44MB floppies
+diskdef cpm86-144feat
+  seclen 512
+  tracks 160
+  sectrk 18
+  blocksize 4096
+  maxdir 256
+  skew 1
+  boottrk 2
+  os 3
+end
+
 diskdef cf2dd
   seclen 512
   tracks 160
@@ -155,7 +167,7 @@ diskdef epsqx10
   os 2.2
 end
 
-diskdef ibm-8ss 
+diskdef ibm-8ss
   seclen 512
   tracks 40
   sectrk 8
@@ -164,4 +176,15 @@ diskdef ibm-8ss
   skew 0
   boottrk 1
   os 2.2
+end
+
+diskdef electroglas
+  seclen 512
+  tracks 80
+  sectrk 10
+  blocksize 2048
+  maxdir 256
+  skew 0
+  boottrk 1
+  os 3
 end
