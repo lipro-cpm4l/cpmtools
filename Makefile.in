@@ -94,6 +94,7 @@ install:	all
 		$(INSTALL_DATA) mkfs.cpm.1 $(MANDIR)/man1/mkfs.cpm.1
 		$(INSTALL_DATA) fsck.cpm.1 $(MANDIR)/man1/fsck.cpm.1
 		$(INSTALL_DATA) fsed.cpm.1 $(MANDIR)/man1/fsed.cpm.1
+		$(INSTALL_DATA) cpm.5 $(MANDIR)/man5/cpm.5
 
 clean:
 		rm -f *$(OBJEXT) *.1 *.5
