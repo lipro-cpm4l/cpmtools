@@ -1044,8 +1044,8 @@ host_cpu=`echo $ac_cv_host | sed 's/^\([^-]*\)-\([^-]*\)-\(.*\)$/\1/'`
 host_vendor=`echo $ac_cv_host | sed 's/^\([^-]*\)-\([^-]*\)-\(.*\)$/\2/'`
 host_os=`echo $ac_cv_host | sed 's/^\([^-]*\)-\([^-]*\)-\(.*\)$/\3/'`
 
-VERSION=2.0
-UPDATED='October 11, 2001'
+VERSION=2.1
+UPDATED='April 21, 2002'
 
 DEVICE="posix"
 
