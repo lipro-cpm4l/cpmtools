@@ -411,6 +411,7 @@ static int diskdefReadSuper(struct cpmSuperBlock *d, const char *format)
         insideDef=0;
         d->size=(d->secLength*d->sectrk*(d->tracks-d->boottrk))/d->blksiz;
         if (d->extents==0) d->extents=((d->size>=256 ? 8 : 16)*d->blksiz)/16384;
+        if (d->extents==0) d->extents=1;
         if (found) break;
       }
       else if (argc==2)

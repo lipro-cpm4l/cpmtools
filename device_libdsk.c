@@ -19,7 +19,7 @@
 /* Device_open           -- Open an image file                      */ /*{{{*/
 const char *Device_open(struct Device *this, const char *filename, int mode, const char *deviceOpts)
 {
-  dsk_err_t e = dsk_open(&this->dev, filename, deviceOpts);
+  dsk_err_t e = dsk_open(&this->dev, filename, deviceOpts, NULL);
   this->opened = 0;
   if (e) return dsk_strerror(e);
   this->opened = 1;
