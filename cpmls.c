@@ -1,15 +1,11 @@
 /* #includes */ /*{{{C}}}*//*{{{*/
 #include <ctype.h>
 #include <errno.h>
-#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
-extern char *optarg;
-extern int optind,opterr,optopt;
-int getopt(int argc, char * const *argv, const char *optstring);
-
+#include "config.h"
+#include "getopt.h"
 #include "cpmfs.h"
 /*}}}*/
 
@@ -130,7 +126,7 @@ static void old3dir(char **dirent, int entries, struct cpmInode *ino)
 
   if (entries)
   {
-    int i,j,k,l,announce,user;
+    int i,j,k,l,announce,user, attrib;
     int totalBytes=0,totalRecs=0;
 
     qsort(dirent,entries,sizeof(char*),namecmp);
@@ -146,6 +142,7 @@ static void old3dir(char **dirent, int entries, struct cpmInode *ino)
         {
           cpmNamei(ino,dirent[i],&file);
           cpmStat(&file,&statbuf);
+	  cpmAttrGet(&file, &attrib);
           if (announce==1)
           {
             if (user) putchar('\n');
@@ -165,10 +162,18 @@ static void old3dir(char **dirent, int entries, struct cpmInode *ino)
           totalRecs+=(statbuf.size+127)/128;
           printf(" %5.1ldk",(statbuf.size+buf.f_bsize-1)/buf.f_bsize*(buf.f_bsize/1024));
           printf(" %6.1ld ",(long)(statbuf.size/128));
-          printf("%s %s     ",statbuf.mode&01000 ? "Sys" : "Dir",statbuf.mode&0200 ? "RW" : "RO");
-          putchar(' ');
-          putchar(' ');
-          printf("None   ");
+          putchar((attrib & CPM_ATTR_F1)   ? '1' : ' ');
+          putchar((attrib & CPM_ATTR_F2)   ? '2' : ' ');
+          putchar((attrib & CPM_ATTR_F3)   ? '3' : ' ');          
+          putchar((attrib & CPM_ATTR_F4)   ? '4' : ' ');
+          putchar((statbuf.mode&(S_IWUSR|S_IWGRP|S_IWOTH)) ? ' ' : 'R');
+          putchar((attrib & CPM_ATTR_SYS)  ? 'S' : ' ');
+          putchar((attrib & CPM_ATTR_ARCV) ? 'A' : ' ');
+          printf("      ");
+          if      (attrib & CPM_ATTR_PWREAD)  printf("Read   ");
+          else if (attrib & CPM_ATTR_PWWRITE) printf("Write  ");
+          else if (attrib & CPM_ATTR_PWDEL)   printf("Delete "); 
+          else printf("None   ");
           tmp=gmtime(&statbuf.mtime);
           printf("%02d/%02d/%02d %02d:%02d  ",tmp->tm_mon+1,tmp->tm_mday,tmp->tm_year%100,tmp->tm_hour,tmp->tm_min);
           tmp=gmtime(&statbuf.ctime);
@@ -251,14 +256,62 @@ static void ls(char **dirent, int entries, struct cpmInode *ino, int l, int c, i
   }
 }
 /*}}}*/
+/* lsattr  -- output something like e2fs lsattr */ /*{{{*/
+static void lsattr(char **dirent, int entries, struct cpmInode *ino)
+{
+  int i,user,announce,any;
+  struct cpmStat statbuf;
+  struct cpmInode file;
+  cpm_attr_t attrib;
+
+  qsort(dirent,entries,sizeof(char*),namecmp);
+  announce=0;
+  any=0;
+  for (user=0; user<32; ++user)
+  {
+    announce=0;
+    for (i=0; i<entries; ++i) if (dirent[i][0]!='.')
+    {
+      if (dirent[i][0]=='0'+user/10 && dirent[i][1]=='0'+user%33)
+      {
+        if (announce==0)
+        {
+          if (any) putchar('\n');
+          printf("%d:\n",user);
+          announce=1;
+        }
+        any=1;
+
+        cpmNamei(ino,dirent[i],&file);
+        cpmStat(&file,&statbuf);
+        cpmAttrGet(&file, &attrib); 
+
+        putchar ((attrib & CPM_ATTR_F1)      ? '1' : '-');
+        putchar ((attrib & CPM_ATTR_F2)      ? '2' : '-');
+        putchar ((attrib & CPM_ATTR_F3)      ? '3' : '-');
+        putchar ((attrib & CPM_ATTR_F4)      ? '4' : '-');
+        putchar ((attrib & CPM_ATTR_SYS)     ? 's' : '-');
+        putchar ((attrib & CPM_ATTR_ARCV)    ? 'a' : '-');
+        putchar ((attrib & CPM_ATTR_PWREAD)  ? 'r' : '-');
+        putchar ((attrib & CPM_ATTR_PWWRITE) ? 'w' : '-');
+        putchar ((attrib & CPM_ATTR_PWDEL)   ? 'e' : '-');
+
+        printf(" %s\n",dirent[i]+2);
+      }
+    }
+  }
+}
+/*}}}*/
 
 const char cmd[]="cpmls";
 
 int main(int argc, char *argv[])
 {
   /* variables */ /*{{{*/
+  const char *err;
   const char *image;
   const char *format=FORMAT;
+  const char *devopts=NULL;
   int c,usage=0;
   struct cpmSuperBlock drive;
   struct cpmInode root;
@@ -267,20 +320,22 @@ int main(int argc, char *argv[])
   int inode=0;
   char **gargv;
   int gargc;
-  char starlit[]="*";
-  char *star[]={starlit};
+  static char starlit[2]="*";
+  static char * const star[]={starlit};
   /*}}}*/
 
   /* parse options */ /*{{{*/
-  while ((c=getopt(argc,argv,"cf:ih?dDFl"))!=EOF) switch(c)
+  while ((c=getopt(argc,argv,"cT:f:ih?dDFlA"))!=EOF) switch(c)
   {
     case 'f': format=optarg; break;
+    case 'T': devopts=optarg; break;
     case 'h':
     case '?': usage=1; break;
     case 'd': style=1; break;
     case 'D': style=2; break;
     case 'F': style=3; break;
     case 'l': style=4; break;
+    case 'A': style=5; break;
     case 'c': changetime=1; break;
     case 'i': inode=1; break;
   }
@@ -290,23 +345,24 @@ int main(int argc, char *argv[])
 
   if (usage)
   {
-    fprintf(stderr,"Usage: %s [-f format] [-d|-D|-F|[-l][-c][-i]] image [file ...]\n",cmd);
+    fprintf(stderr,"Usage: %s [-f format] [-T libdsk-type] [-d|-D|-F|-A|[-l][-c][-i]] image [file ...]\n",cmd);
     exit(1);
   }
   /*}}}*/
   /* open image */ /*{{{*/
-  if ((drive.fd = open(image,O_RDONLY)) == -1 ) 
+  if ((err=Device_open(&drive.dev,image,O_RDONLY,devopts))) 
   {
-    fprintf(stderr,"%s: can not open %s: %s\n",cmd,image,strerror(errno));
+    fprintf(stderr,"%s: can not open %s (%s)\n",cmd,image,err);
     exit(1);
   }
-  getformat(format,&drive,&root);
+  cpmReadSuper(&drive,&root,format);
   /*}}}*/
-  if (optind<argc) glob(optind,argc,argv,&root,&gargc,&gargv);
-  else glob(0,1,star,&root,&gargc,&gargv);
+  if (optind<argc) cpmglob(optind,argc,argv,&root,&gargc,&gargv);
+  else cpmglob(0,1,star,&root,&gargc,&gargv);
   if (style==1) olddir(gargv,gargc);
   else if (style==2) oldddir(gargv,gargc,&root);
   else if (style==3) old3dir(gargv,gargc,&root);
+  else if (style==5) lsattr(gargv, gargc, &root); 
   else ls(gargv,gargc,&root,style==4,changetime,inode);
   exit(0);
 }

@@ -15,11 +15,10 @@
 #include <string.h>
 #include <fcntl.h>
 #include <limits.h>
-#include <unistd.h>
-extern char *optarg;
-extern int optind,opterr,optopt;
-int getopt(int argc, char * const *argv, const char *optstring);
+#include <stdlib.h>
+#include "config.h"
 
+#include "getopt.h"
 #include "cpmfs.h"
 /*}}}*/
 
@@ -116,17 +115,20 @@ static void usage(void) /*{{{*/
 int main(int argc, char *argv[])
 {
   /* variables */ /*{{{*/
-  char *image;
+  const char *err;
+  const char *image;
   const char *format=FORMAT;
+  const char *devopts=NULL;
   int c,readcpm=-1,todir=-1;
   struct cpmInode root;
-  struct cpmSuperBlock drive;
+  struct cpmSuperBlock super;
   int exitcode=0;
   /*}}}*/
 
   /* parse options */ /*{{{*/
-  while ((c=getopt(argc,argv,"f:h?t"))!=EOF) switch(c)
+  while ((c=getopt(argc,argv,"T:f:h?t"))!=EOF) switch(c)
   {
+    case 'T': devopts=optarg; break;
     case 'f': format=optarg; break;
     case 'h':
     case '?': usage(); break;
@@ -163,12 +165,12 @@ int main(int argc, char *argv[])
   else usage();
   /*}}}*/
   /* open image file */ /*{{{*/
-  if ((drive.fd = open(image,readcpm ? O_RDONLY : O_RDWR)) == -1 ) 
+  if ((err=Device_open(&super.dev,image,readcpm ? O_RDONLY : O_RDWR, devopts)))
   {
-    fprintf(stderr,"%s: can not open %s\n",cmd,image);
+    fprintf(stderr,"%s: can not open %s (%s)\n",cmd,image,err);
     exit(1);
   }
-  getformat(format,&drive,&root);
+  cpmReadSuper(&super,&root,format);
   /*}}}*/
   if (readcpm) /* copy from CP/M to UNIX */ /*{{{*/
   {
@@ -300,6 +302,6 @@ int main(int argc, char *argv[])
     }
   }
   /*}}}*/
-  cpmUmount(&drive);
+  cpmUmount(&super);
   exit(exitcode);
 }

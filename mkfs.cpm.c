@@ -1,17 +1,21 @@
 /* #includes */ /*{{{C}}}*//*{{{*/
 #include <ctype.h>
 #include <errno.h>
-#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
-#include <unistd.h>
+#include "config.h"
+
 extern char *optarg;
 extern int optind,opterr,optopt;
 int getopt(int argc, char * const *argv, const char *optstring);
 
 #include "cpmfs.h"
+/*}}}*/
+/* #defines */ /*{{{*/
+#ifndef O_BINARY
+#define O_BINARY 0
+#endif
 /*}}}*/
 
 /* mkfs -- make file system */ /*{{{*/
@@ -27,7 +31,7 @@ static int mkfs(struct cpmSuperBlock *drive, const char *name, const char *label
   /*}}}*/
 
   /* open image file */ /*{{{*/
-  if ((fd = open(name, O_CREAT|O_WRONLY, 0666)) < 0)
+  if ((fd = open(name, O_BINARY|O_CREAT|O_WRONLY, 0666)) < 0)
   {
     boo=strerror(errno);
     return -1;
@@ -131,8 +135,8 @@ int main(int argc, char *argv[]) /*{{{*/
     fprintf(stderr,"Usage: %s [-f format] [-b boot] [-L label] image\n",cmd);
     exit(1);
   }
-  drive.fd=-1;
-  getformat(format,&drive,&root);
+  drive.dev.opened=0;
+  cpmReadSuper(&drive,&root,format);
   bootTrackSize=drive.boottrk*drive.secLength*drive.sectrk;
   if ((bootTracks=malloc(bootTrackSize))==(void*)0)
   {
@@ -146,7 +150,7 @@ int main(int argc, char *argv[]) /*{{{*/
     int fd;
     size_t size;
 
-    if ((fd=open(boot[c],O_RDONLY))==-1)
+    if ((fd=open(boot[c],O_BINARY|O_RDONLY))==-1)
     {
       fprintf(stderr,"%s: can not open %s: %s\n",cmd,boot[c],strerror(errno));
       exit(1);
