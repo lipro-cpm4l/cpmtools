@@ -1,0 +1,12 @@
+The cpmtools 1.6 package allows to create, check, read and write CP/M file
+systems similar to the mtools package, which accesses DOS file systems.
+Beside the regular user commands, there is a file system editor (read-only
+for now).  All features of CP/M file systems are supported.
+
+The following things have been changed compared to version 1.5:
+
+o  Raoul Golan contributed code to read apple II disk images
+
+URL: http://www.moria.de/~michael/cpmtools/
+
+Michael
