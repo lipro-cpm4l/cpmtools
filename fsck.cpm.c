@@ -4,8 +4,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
-#include <fcntl.h>
-#include <unistd.h>
+#include "config.h"
+
 extern char *optarg;
 extern int optind,opterr,optopt;
 int getopt(int argc, char * const *argv, const char *optstring);
@@ -273,7 +273,10 @@ static int fsck(struct cpmInode *root, const char *image)
         assert(min<max);
         for (i=min; i<max; ++i)
         {
-          if (dir->pointers[i] | (sb->size>=256 && dir->pointers[++i])) ++used;
+        /* [JCE] Rewritten because the previous implementation didn't work
+         *       properly with Visual C++ */
+          if (dir->pointers[i] || (sb->size>=256 && dir->pointers[i+1])) ++used;
+          if (sb->size >= 256) ++i;
         }
         recordsInBlocks=(((unsigned char)dir->blkcnt)*128+sb->blksiz-1)/sb->blksiz;
         if (recordsInBlocks!=used)
@@ -563,16 +566,19 @@ const char cmd[]="fsck.cpm";
 /* main */ /*{{{*/
 int main(int argc, char *argv[])
 {
-  char *image;
+  const char *err;
+  const char *image;
   const char *format=FORMAT;
+  const char *devopts=NULL;
   int c,usage=0;
   struct cpmSuperBlock sb;
   struct cpmInode root;
   enum Result ret;
 
-  while ((c=getopt(argc,argv,"f:nh?"))!=EOF) switch(c)
+  while ((c=getopt(argc,argv,"T:f:nh?"))!=EOF) switch(c)
   {
     case 'f': format=optarg; break;
+    case 'T': devopts=optarg; break;
     case 'n': norepair=1; break;
     case 'h':
     case '?': usage=1; break;
@@ -586,11 +592,11 @@ int main(int argc, char *argv[])
     fprintf(stderr,"Usage: %s [-f format] [-n] image\n",cmd);
     exit(1);
   }
-  if ((sb.fd=open(image,norepair ? O_RDONLY : O_RDWR))==-1) 
+  if ((err=Device_open(&sb.dev, image, (norepair ? O_RDONLY : O_RDWR), devopts)))
   {
-    if ((sb.fd=open(image,O_RDONLY))==-1) 
+    if ((err=Device_open(&sb.dev, image,O_RDONLY, devopts)))
     {
-      fprintf(stderr,"%s: can not open %s: %s\n",cmd,image,strerror(errno));
+      fprintf(stderr,"%s: can not open %s: %s\n",cmd,image,err);
       exit(1);
     }
     else
@@ -598,7 +604,7 @@ int main(int argc, char *argv[])
       fprintf(stderr,"%s: can not open %s for writing, no repair possible\n",cmd,image);
     }
   }
-  getformat(format,&sb,&root);
+  cpmReadSuper(&sb,&root,format);
   ret=fsck(&root,image);
   if (ret&MODIFIED)
   {

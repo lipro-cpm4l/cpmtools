@@ -5,11 +5,12 @@
 #include <string.h>
 #include <stdlib.h>
 #include "config.h"
+
 #include "getopt.h"
 #include "cpmfs.h"
 /*}}}*/
 
-const char cmd[]="cpmrm";
+const char cmd[]="cpmchmod";
 
 int main(int argc, char *argv[]) /*{{{*/
 {
@@ -23,6 +24,7 @@ int main(int argc, char *argv[]) /*{{{*/
   struct cpmInode root;
   int gargc;
   char **gargv;
+  unsigned int mode; 
   /*}}}*/
 
   /* parse options */ /*{{{*/
@@ -34,12 +36,16 @@ int main(int argc, char *argv[]) /*{{{*/
     case '?': usage=1; break;
   }
 
-  if (optind>=(argc-1)) usage=1;
-  else image=argv[optind];
+  if (optind>=(argc-2)) usage=1;
+  else 
+  {
+    image=argv[optind];
+    if (!sscanf(argv[optind+1], "%o", &mode)) usage=1;
+  }    
 
   if (usage)
   {
-    fprintf(stderr,"Usage: %s [-f format] [-T dsktype] image pattern ...\n",cmd);
+    fprintf(stderr,"Usage: %s [-f format] image mode pattern ...\n",cmd);
     exit(1);
   }
   /*}}}*/
@@ -54,9 +60,16 @@ int main(int argc, char *argv[]) /*{{{*/
   cpmglob(optind,argc,argv,&root,&gargc,&gargv);
   for (i=0; i<gargc; ++i)
   {
-    if (cpmUnlink(&root,gargv[i])==-1)
+    struct cpmInode ino;
+
+    if (cpmNamei(&root,gargv[i], &ino)==-1)
     {
-      fprintf(stderr,"%s: can not erase %s: %s\n",cmd,gargv[i],boo);
+      fprintf(stderr,"%s: can not find %s: %s\n",cmd,gargv[i],boo);
+      exitcode=1;
+    }
+    else if (cpmChmod(&ino, mode) == -1)
+    {
+      fprintf(stderr,"%s: Failed to set attributes for %s: %s\n",cmd,gargv[i],boo);
       exitcode=1;
     }
   }

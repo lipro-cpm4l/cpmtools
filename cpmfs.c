@@ -12,13 +12,11 @@
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
-#include <fcntl.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
-#include <unistd.h>
-
+#include "config.h"
 #include "cpmdir.h"
 #include "cpmfs.h"
 /*}}}*/
@@ -27,9 +25,9 @@
 
 /* Number of _used_ bits per int */
 
-#define INTBITS (sizeof(int)*8)
+#define INTBITS ((int)(sizeof(int)*8))
 
-/* There are three reserved entries: ., .., [passwd] and [label] */
+/* There are four reserved entries: ., .., [passwd] and [label] */
 
 #define RESERVED_ENTRIES 4
 
@@ -47,6 +45,18 @@ extern char **environ;
 const char *boo;
 static mode_t s_ifdir=1;
 static mode_t s_ifreg=1;
+
+/* memcpy7            -- Copy string, leaving 8th bit alone      */ /*{{{*/
+static void memcpy7(char *dest, const char *src, int count)
+{
+  while (count--)
+  {
+    *dest = ((*dest) & 0x80) | ((*src) & 0x7F);
+    ++dest;
+    ++src;
+  }
+}
+/*}}}*/
 
 /* file name conversions */ 
 /* splitFilename      -- split file name into name and extension */ /*{{{*/
@@ -179,51 +189,6 @@ static int allocBlock(const struct cpmSuperBlock *drive)
 }
 /*}}}*/
 
-/* physical sector I/O */
-/* readSector         -- read a physical sector                  */ /*{{{*/
-static int readSector(const struct cpmSuperBlock *drive, int track, int sector, char *buf)
-{
-  int res;
-
-  assert(sector>=0);
-  assert(sector<drive->sectrk);
-  assert(track>=0);
-  assert(track<drive->tracks);
-  if (lseek(drive->fd,(off_t)(sector+track*drive->sectrk)*drive->secLength,SEEK_SET)==-1) 
-  {
-    boo=strerror(errno);
-    return -1;
-  }
-  if ((res=read(drive->fd, buf, drive->secLength)) != drive->secLength) 
-  {
-    if (res==-1)
-    {
-      boo=strerror(errno);
-      return -1;
-    }
-    else memset(buf+res,0,drive->secLength-res); /* hit end of disk image */
-  }
-  return 0;
-}
-/*}}}*/
-/* writeSector        -- write physical sector                   */ /*{{{*/
-static int writeSector(const struct cpmSuperBlock *drive, int track, int sector, const char *buf)
-{
-  assert(sector>=0);
-  assert(sector<drive->sectrk);
-  assert(track>=0);
-  assert(track<drive->tracks);
-  if (lseek(drive->fd,(off_t)(sector+track*drive->sectrk)*drive->secLength, SEEK_SET)==-1)
-  {
-    boo=strerror(errno);
-    return -1;
-  }
-  if (write(drive->fd, buf, drive->secLength) == drive->secLength) return 0;
-  boo=strerror(errno);
-  return -1;
-}
-/*}}}*/
-
 /* logical block I/O */
 /* readBlock          -- read a (partial) block                  */ /*{{{*/
 static int readBlock(const struct cpmSuperBlock *d, int blockno, char *buffer, int start, int end)
@@ -238,7 +203,13 @@ static int readBlock(const struct cpmSuperBlock *d, int blockno, char *buffer, i
   track=(blockno*(d->blksiz/d->secLength)+ d->sectrk*d->boottrk)/d->sectrk;
   for (counter=0; counter<=end; ++counter)
   {
-    if (counter>=start && readSector(d,track,d->skewtab[sect],buffer+(d->secLength*counter))==-1) return -1;
+    const char *err;
+
+    if (counter>=start && (err=Device_readSector(&d->dev,track,d->skewtab[sect],buffer+(d->secLength*counter))))
+    {
+      boo=err;
+      return -1;
+    }
     ++sect;
     if (sect>=d->sectrk) 
     {
@@ -262,7 +233,13 @@ static int writeBlock(const struct cpmSuperBlock *d, int blockno, const char *bu
   track = (blockno*(d->blksiz/d->secLength))/d->sectrk+d->boottrk;
   for (counter = 0; counter<=end; ++counter)
   {
-    if (counter>=start && writeSector(d,track,d->skewtab[sect],buffer+(d->secLength*counter))==-1) return -1;
+    const char *err;
+
+    if (counter>=start && (err=Device_writeSector(&d->dev,track,d->skewtab[sect],buffer+(d->secLength*counter))))
+    {
+      boo=err;
+      return -1;
+    }
     ++sect;
     if (sect>=d->sectrk) 
     {
@@ -408,80 +385,82 @@ static void updateTimeStamps(const struct cpmInode *ino, int extent)
 }
 /*}}}*/
 
-/* diskdefSuperRead   -- read super block from diskdefs file     */ /*{{{*/
-static int diskdefSuperRead(const char *format, struct cpmSuperBlock *d)
+/* diskdefReadSuper   -- read super block from diskdefs file     */ /*{{{*/
+static int diskdefReadSuper(struct cpmSuperBlock *d, const char *format)
 {
-  char buf[128],str[32],typestr[8];
+  char line[256];
   FILE *fp;
+  int insideDef=0,found=0;
 
   if ((fp=fopen(DISKDEFS,"r"))==(FILE*)0 && (fp=fopen("diskdefs","r"))==(FILE*)0)
   {
     fprintf(stderr,"%s: Neither " DISKDEFS " nor diskdefs could be opened.\n",cmd);
     exit(1);
   }
-  while (fgets(buf,sizeof(buf),fp)!=(char*)0)
+  while (fgets(line,sizeof(line),fp)!=(char*)0)
   {
-    if (buf[0]=='#' || buf[0]=='\n') continue;
-    if (sscanf(buf,"%s %d %d %d %d %d %d %d %s\n",str,&(d->secLength),&(d->tracks),&(d->sectrk),&(d->blksiz),&(d->maxdir),&(d->skew),&(d->boottrk),typestr)!=9)
+    int argc;
+    char *argv[2];
+
+    for (argc=0; argc<1 && (argv[argc]=strtok(argc ? (char*)0 : line," \t\n")); ++argc);
+    if ((argv[argc]=strtok((char*)0,"\n"))!=(char*)0) ++argc;
+    if (insideDef)
     {
-      fprintf(stderr,"%s: invalid line for format %s\n",cmd,format);
-      continue;
+      if (argc==1 && strcmp(argv[0],"end")==0)
+      {
+        insideDef=0;
+        d->size=(d->secLength*d->sectrk*(d->tracks-d->boottrk))/d->blksiz;
+        if (d->extents==0) d->extents=((d->size>=256 ? 8 : 16)*d->blksiz)/16384;
+        if (found) break;
+      }
+      else if (argc==2)
+      {
+        if (strcmp(argv[0],"seclen")==0) d->secLength=strtol(argv[1],(char**)0,0);
+        else if (strcmp(argv[0],"tracks")==0) d->tracks=strtol(argv[1],(char**)0,0);
+        else if (strcmp(argv[0],"sectrk")==0) d->sectrk=strtol(argv[1],(char**)0,0);
+        else if (strcmp(argv[0],"blocksize")==0) d->blksiz=strtol(argv[1],(char**)0,0);
+        else if (strcmp(argv[0],"maxdir")==0) d->maxdir=strtol(argv[1],(char**)0,0);
+        else if (strcmp(argv[0],"skew")==0) d->skew=strtol(argv[1],(char**)0,0);
+        else if (strcmp(argv[0],"boottrk")==0) d->boottrk=strtol(argv[1],(char**)0,0);
+        else if (strcmp(argv[0],"logicalextents")==0) d->extents=strtol(argv[1],(char**)0,0);
+        else if (strcmp(argv[0],"os")==0)
+        {
+          if (strcmp(argv[1],"2.2")==0) d->type=CPMFS_DR22;
+          else if (strcmp(argv[1],"3")==0) d->type=CPMFS_DR3;
+          else if (strcmp(argv[1],"p2dos")==0) d->type=CPMFS_P2DOS;
+        }
+      }
     }
-    if (strcmp(str,format)==0) break;
+    else if (argc==2 && strcmp(argv[0],"diskdef")==0)
+    {
+      insideDef=1;
+      d->skew=1;
+      d->extents=0;
+      d->type=CPMFS_DR3;
+      if (strcmp(argv[1],format)==0) found=1;
+    }
   }
   fclose(fp);
-  if (strcmp(str,format))
+  if (!found)
   {
     fprintf(stderr,"%s: unknown format %s\n",cmd,format);
-    exit(1);
-  }
-  if (strcmp(typestr,"p2dos")==0)
-  {
-#ifdef CPMFS_DEBUG
-    fprintf(stderr,"CPMFS: type P2DOS\n");
-#endif
-    d->type=CPMFS_P2DOS;
-  }
-  else if (strcmp(typestr,"2.2")==0)
-  {
-#ifdef CPMFS_DEBUG
-    fprintf(stderr,"CPMFS: type DR 2.2\n");
-#endif
-    d->type=CPMFS_DR22;
-  }
-  else if (strcmp(typestr,"3")==0)
-  {
-#ifdef CPMFS_DEBUG
-    fprintf(stderr,"CPMFS: type DR 3\n");
-#endif
-    d->type=CPMFS_DR3;
-  }
-  else
-  {
-    fprintf(stderr,"%s: invalid operating system %s\n",cmd,typestr);
     exit(1);
   }
   return 0;
 }
 /*}}}*/
-/* amsSuperRead       -- read super block from amstrad disk      */ /*{{{*/
-static int amsSuperRead(const char *format, struct cpmSuperBlock *d)
+/* amsReadSuper       -- read super block from amstrad disk      */ /*{{{*/
+static int amsReadSuper(struct cpmSuperBlock *d, const char *format)
 {
   unsigned char boot_sector[512], *boot_spec;
+  const char *err;
 
-  /* Create a dummy superblock so we can read the boot sector */ /*{{{*/
-	
-  d->sectrk    = 9;
-  d->secLength = 512;
-  d->tracks    = 40;
-  /*}}}*/
-  /* Try to read the boot sector */ /*{{{*/
-  if (readSector(d, 0, 0, (char *)boot_sector))
+  Device_setGeometry(&d->dev,512,9,40);
+  if ((err=Device_readSector(&d->dev, 0, 0, (char *)boot_sector)))
   {
-    fprintf(stderr,"%s: Failed to read Amstrad superblock\n",cmd);
+    fprintf(stderr,"%s: Failed to read Amstrad superblock (%s)\n",cmd,err);
     exit(1);
   }
-  /*}}}*/
   boot_spec=(boot_sector[0] == 0 || boot_sector[0] == 3)?boot_sector:(unsigned char*)0;
   /* Check for JCE's extension to allow Amstrad and MSDOS superblocks
    * in the same sector (for the PCW16)
@@ -508,9 +487,6 @@ static int amsSuperRead(const char *format, struct cpmSuperBlock *d)
               [7] = No. of directory blocks
    */
   d->type = CPMFS_DR3;	/* Amstrads are CP/M 3 systems */
-#ifdef CPMFS_DEBUG
-    fprintf(stderr,"CPMFS: type DR 3\n");
-#endif
   d->secLength = 128 << boot_spec[4];
   d->tracks    = boot_spec[2];
   if (boot_spec[1] & 3) d->tracks *= 2;
@@ -519,26 +495,96 @@ static int amsSuperRead(const char *format, struct cpmSuperBlock *d)
   d->maxdir    = (d->blksiz / 32) * boot_spec[7];
   d->skew      = 1; /* Amstrads skew at the controller level */
   d->boottrk   = boot_spec[5];
+  d->size      = (d->secLength*d->sectrk*(d->tracks-d->boottrk))/d->blksiz;
+  d->extents   = ((d->size>=256 ? 8 : 16)*d->blksiz)/16384;
  
   return 0;
 }
 /*}}}*/
-/* getformat          -- get DPB and init in-core data for drive */ /*{{{*/
-int getformat(const char *format, struct cpmSuperBlock *d, struct cpmInode *root)
-{
-  {
-    while (s_ifdir && !S_ISDIR(s_ifdir)) s_ifdir<<=1;
-    assert(s_ifdir);
-    while (s_ifreg && !S_ISREG(s_ifreg)) s_ifreg<<=1;
-    assert(s_ifreg);
-  }
-  /* read super block */ /*{{{*/
-  if (strcmp(format, "amstrad")==0) amsSuperRead(format, d);
-  else diskdefSuperRead(format, d);
 
-  d->size=(d->secLength*d->sectrk*(d->tracks-d->boottrk))/d->blksiz;
-  d->extents=((d->size>=256 ? 8 : 16)*d->blksiz)/16384;
-  /*}}}*/
+/* match              -- match filename against a pattern        */ /*{{{*/
+static int recmatch(const char *a, const char *pattern)
+{
+  int first=1;
+
+  while (*pattern)
+  {
+   switch (*pattern)
+  {
+    case '*':
+    {
+      if (*a=='.' && first) return 1;
+      ++pattern;
+      while (*a) if (recmatch(a,pattern)) return 1; else ++a;
+      break;
+    }
+    case '?':
+    {
+      if (*a) { ++a; ++pattern; } else return 0;
+      break;
+    }
+    default: if (*a==*pattern) { ++a; ++pattern; } else return 0;
+  }
+  first=0;
+  }
+  return (*pattern=='\0' && *a=='\0');
+}
+
+int match(const char *a, const char *pattern) 
+{
+  int user;
+  char pat[255];
+
+  assert(strlen(pattern)<255);
+  if (isdigit(*pattern) && *(pattern+1)==':') { user=(*pattern-'0'); pattern+=2; }
+  else if (isdigit(*pattern) && isdigit(*(pattern+1)) && *(pattern+2)==':') { user=(10*(*pattern-'0')+(*(pattern+1)-'0')); pattern+=3; }
+  else user=-1;
+  if (user==-1) sprintf(pat,"??%s",pattern);
+  else sprintf(pat,"%02d%s",user,pattern);
+  return recmatch(a,pat);
+}
+
+/*}}}*/
+/* cpmglob            -- expand CP/M style wildcards             */ /*{{{*/
+void cpmglob(int optin, int argc, char * const argv[], struct cpmInode *root, int *gargc, char ***gargv)
+{
+  struct cpmFile dir;
+  int entries,dirsize=0;
+  struct cpmDirent *dirent=(struct cpmDirent*)0;
+  int gargcap=0,i,j;
+
+  *gargv=(char**)0;
+  *gargc=0;
+  cpmOpendir(root,&dir);
+  entries=0;
+  dirent=realloc(dirent,sizeof(struct cpmDirent)*(dirsize=32));
+  while (cpmReaddir(&dir,dirent+entries))
+  {
+    ++entries;
+    if (entries==dirsize) dirent=realloc(dirent,sizeof(struct cpmDirent)*(dirsize*=2));
+  }
+  for (i=optin; i<argc; ++i)
+  {
+    for (j=0; j<entries; ++j) if (i<argc && match(dirent[j].name,argv[i]))
+    {
+      if (*gargc==gargcap) *gargv=realloc(*gargv,sizeof(char*)*(gargcap ? (gargcap*=2) : (gargcap=16)));
+      (*gargv)[*gargc]=strcpy(malloc(strlen(dirent[j].name)+1),dirent[j].name);
+      ++*gargc;
+    }
+  }
+}
+/*}}}*/
+
+/* cpmReadSuper       -- get DPB and init in-core data for drive */ /*{{{*/
+int cpmReadSuper(struct cpmSuperBlock *d, struct cpmInode *root, const char *format)
+{
+  while (s_ifdir && !S_ISDIR(s_ifdir)) s_ifdir<<=1;
+  assert(s_ifdir);
+  while (s_ifreg && !S_ISREG(s_ifreg)) s_ifreg<<=1;
+  assert(s_ifreg);
+  if (strcmp(format, "amstrad")==0) amsReadSuper(d,format);
+  else diskdefReadSuper(d,format);
+  Device_setGeometry(&d->dev,d->secLength,d->sectrk,d->tracks);
   /* generate skew table */ /*{{{*/
   if (( d->skewtab = malloc(d->sectrk*sizeof(int))) == (int*)0) 
   {
@@ -588,7 +634,7 @@ int getformat(const char *format, struct cpmSuperBlock *d, struct cpmInode *root
     return -1;
   }
   /*}}}*/
-  if (d->fd==-1) memset(d->dir,0xe5,d->maxdir*32);
+  if (d->dev.opened==0) memset(d->dir,0xe5,d->maxdir*32);
   else if (readPhysDirectory(d)==-1) return -1;
   alvInit(d);
   if (d->type==CPMFS_DR3) /* read additional superblock information */ /*{{{*/
@@ -679,79 +725,6 @@ int getformat(const char *format, struct cpmSuperBlock *d, struct cpmInode *root
   return 0;
 }
 /*}}}*/
-/* match              -- match filename against a pattern        */ /*{{{*/
-static int recmatch(const char *a, const char *pattern)
-{
-  int first=1;
-
-  while (*pattern)
-  {
-   switch (*pattern)
-  {
-    case '*':
-    {
-      if (*a=='.' && first) return 1;
-      ++pattern;
-      while (*a) if (recmatch(a,pattern)) return 1; else ++a;
-      break;
-    }
-    case '?':
-    {
-      if (*a) { ++a; ++pattern; } else return 0;
-      break;
-    }
-    default: if (*a==*pattern) { ++a; ++pattern; } else return 0;
-  }
-  first=0;
-  }
-  return (*pattern=='\0' && *a=='\0');
-}
-
-int match(const char *a, const char *pattern) 
-{
-  int user;
-  char pat[255];
-
-  assert(strlen(pattern)<255);
-  if (isdigit(*pattern) && *(pattern+1)==':') { user=(*pattern-'0'); pattern+=2; }
-  else if (isdigit(*pattern) && isdigit(*(pattern+1)) && *(pattern+2)==':') { user=(10*(*pattern-'0')+(*(pattern+1)-'0')); pattern+=3; }
-  else user=-1;
-  if (user==-1) sprintf(pat,"??%s",pattern);
-  else sprintf(pat,"%02d%s",user,pattern);
-  return recmatch(a,pat);
-}
-
-/*}}}*/
-/* glob               -- expand CP/M style wildcards             */ /*{{{*/
-void glob(int optin, int argc, char *argv[], struct cpmInode *root, int *gargc, char ***gargv)
-{
-  struct cpmFile dir;
-  int entries,dirsize=0;
-  struct cpmDirent *dirent=(struct cpmDirent*)0;
-  int gargcap=0,i,j;
-
-  *gargv=(char**)0;
-  *gargc=0;
-  cpmOpendir(root,&dir);
-  entries=0;
-  dirent=realloc(dirent,sizeof(struct cpmDirent)*(dirsize=32));
-  while (cpmReaddir(&dir,dirent+entries))
-  {
-    ++entries;
-    if (entries==dirsize) dirent=realloc(dirent,sizeof(struct cpmDirent)*(dirsize*=2));
-  }
-  for (i=optin; i<argc; ++i)
-  {
-    for (j=0; j<entries; ++j) if (i<argc && match(dirent[j].name,argv[i]))
-    {
-      if (*gargc==gargcap) *gargv=realloc(*gargv,sizeof(char*)*(gargcap ? (gargcap*=2) : (gargcap=16)));
-      (*gargv)[*gargc]=strcpy(malloc(strlen(dirent[j].name)+1),dirent[j].name);
-      ++*gargc;
-    }
-  }
-}
-/*}}}*/
-
 /* cpmNamei           -- map name to inode                       */ /*{{{*/
 int cpmNamei(const struct cpmInode *dir, const char *filename, struct cpmInode *i)
 {
@@ -763,6 +736,7 @@ int cpmNamei(const struct cpmInode *dir, const char *filename, struct cpmInode *
   static char gmt0[]="TZ=GMT0";
   static char *gmt_env[]={ gmt0, (char*)0 };
   int highestExtno,highestExt=-1,lowestExtno,lowestExt=-1;
+  int protectMode=0;
   /*}}}*/
 
   if (!S_ISDIR(dir->mode))
@@ -778,6 +752,7 @@ int cpmNamei(const struct cpmInode *dir, const char *filename, struct cpmInode *
   /*}}}*/
   else if (strcmp(filename,"[passwd]")==0 && dir->sb->passwdLength) /* access passwords */ /*{{{*/
   {
+    i->attr=0;
     i->ino=dir->sb->maxdir+1;
     i->mode=s_ifreg|0444;
     i->sb=dir->sb;
@@ -788,6 +763,7 @@ int cpmNamei(const struct cpmInode *dir, const char *filename, struct cpmInode *
   /*}}}*/
   else if (strcmp(filename,"[label]")==0 && dir->sb->labelLength) /* access label */ /*{{{*/
   {
+    i->attr=0;
     i->ino=dir->sb->maxdir+2;
     i->mode=s_ifreg|0444;
     i->sb=dir->sb;
@@ -871,6 +847,7 @@ int cpmNamei(const struct cpmInode *dir, const char *filename, struct cpmInode *
         u_days=((unsigned char)date->name[4])+(((unsigned char)date->name[5])<<8);
         u_hour=(unsigned char)date->name[6];
         u_min=(unsigned char)date->name[7];
+	protectMode=(unsigned char)date->name[8];
         break;
       }
       /*}}}*/
@@ -882,6 +859,7 @@ int cpmNamei(const struct cpmInode *dir, const char *filename, struct cpmInode *
         u_days=((unsigned char)date->blkcnt)+(((unsigned char)date->pointers[0])<<8);
         u_hour=(unsigned char)date->pointers[1];
         u_min=(unsigned char)date->pointers[2];
+        protectMode=(unsigned char)date->pointers[3];
         break;
       }
       /*}}}*/
@@ -893,6 +871,7 @@ int cpmNamei(const struct cpmInode *dir, const char *filename, struct cpmInode *
         u_days=((unsigned char)date->pointers[9])+(((unsigned char)date->pointers[10])<<8);
         u_hour=(unsigned char)date->pointers[11];
         u_min=(unsigned char)date->pointers[12];
+        protectMode=(unsigned char)date->pointers[13];
         break;
       }
       /*}}}*/
@@ -923,6 +902,20 @@ int cpmNamei(const struct cpmInode *dir, const char *filename, struct cpmInode *
   /*}}}*/
   else i->atime=i->mtime=i->ctime=0;
   environ=old_environ;
+
+  /* Determine the inode attributes */
+  i->attr = 0;
+  if (dir->sb->dir[lowestExt].name[0]&0x80) i->attr |= CPM_ATTR_F1;
+  if (dir->sb->dir[lowestExt].name[1]&0x80) i->attr |= CPM_ATTR_F2;
+  if (dir->sb->dir[lowestExt].name[2]&0x80) i->attr |= CPM_ATTR_F3;
+  if (dir->sb->dir[lowestExt].name[3]&0x80) i->attr |= CPM_ATTR_F4;
+  if (dir->sb->dir[lowestExt].ext [0]&0x80) i->attr |= CPM_ATTR_RO;
+  if (dir->sb->dir[lowestExt].ext [1]&0x80) i->attr |= CPM_ATTR_SYS;
+  if (dir->sb->dir[lowestExt].ext [2]&0x80) i->attr |= CPM_ATTR_ARCV;
+  if (protectMode&0x20)                     i->attr |= CPM_ATTR_PWDEL;
+  if (protectMode&0x40)                     i->attr |= CPM_ATTR_PWWRITE;
+  if (protectMode&0x80)                     i->attr |= CPM_ATTR_PWREAD;
+
   if (dir->sb->dir[lowestExt].ext[1]&0x80) i->mode|=01000;
   i->mode|=0444;
   if (!(dir->sb->dir[lowestExt].ext[0]&0x80)) i->mode|=0222;
@@ -948,7 +941,7 @@ void cpmStatFS(const struct cpmInode *ino, struct cpmStatFS *buf)
     temp = *(d->alv+i);
     for (j=0; j<INTBITS; ++j)
     {
-      if ((i*INTBITS+j)<d->size)
+      if (i*INTBITS+j < d->size)
       {
         if (1&temp)
         {
@@ -1025,8 +1018,8 @@ int cpmRename(const struct cpmInode *dir, const char *old, const char *new)
   do 
   {
     drive->dir[extent].status=newuser;
-    memcpy(drive->dir[extent].name, newname, 8);
-    memcpy(drive->dir[extent].ext, newext, 3);
+    memcpy7(drive->dir[extent].name, newname, 8);
+    memcpy7(drive->dir[extent].ext, newext, 3);
   } while ((extent=findFileExtent(drive,olduser,oldname,oldext,extent+1,-1))!=-1);
   if (writePhysDirectory(drive)==-1) return -1;
   return 0;
@@ -1188,8 +1181,10 @@ int cpmRead(struct cpmFile *file, char *buf, int count)
 {
   int findext=1,findblock=1,extent=-1,block=-1,extentno=-1,got=0,nextblockpos=-1,nextextpos=-1;
   int blocksize=file->ino->sb->blksiz;
-  int extcap=(file->ino->sb->size<256 ? 16 : 8)*blocksize;
+  int extcap;
 
+  extcap=(file->ino->sb->size<256 ? 16 : 8)*blocksize;
+  if (extcap>16384) extcap=16384*file->ino->sb->extents;
   if (file->ino->ino==file->ino->sb->maxdir+1) /* [passwd] */ /*{{{*/
   {
     if ((file->pos+count)>file->ino->size) count=file->ino->size-file->pos;
@@ -1234,9 +1229,16 @@ int cpmRead(struct cpmFile *file, char *buf, int count)
         if (file->ino->sb->size>=256) ptr*=2;
         block=(unsigned char)file->ino->sb->dir[extent].pointers[ptr];
         if (file->ino->sb->size>=256) block+=((unsigned char)file->ino->sb->dir[extent].pointers[ptr+1])<<8;
-        start=(file->pos%blocksize)/file->ino->sb->secLength;
-        end=((file->pos%blocksize+count)>blocksize ? blocksize-1 : (file->pos%blocksize+count))/file->ino->sb->secLength;
-        readBlock(file->ino->sb,block,buffer,start,end);
+        if (block==0)
+        {
+          memset(buffer,0,blocksize);
+        }
+        else
+        {
+          start=(file->pos%blocksize)/file->ino->sb->secLength;
+          end=((file->pos%blocksize+count)>blocksize ? blocksize-1 : (file->pos%blocksize+count-1))/file->ino->sb->secLength;
+          readBlock(file->ino->sb,block,buffer,start,end);
+        }
       }
       nextblockpos=(file->pos/blocksize)*blocksize+blocksize;
       findblock=0;
@@ -1325,7 +1327,7 @@ int cpmWrite(struct cpmFile *file, const char *buf, int count)
       else
       {
         start=(file->pos%blocksize)/file->ino->sb->secLength;
-        end=((file->pos%blocksize+count-1)>=blocksize ? blocksize-1 : (file->pos%blocksize+count-1))/file->ino->sb->secLength;
+        end=((file->pos%blocksize+count)>blocksize ? blocksize-1 : (file->pos%blocksize+count-1))/file->ino->sb->secLength;
         if (file->pos%file->ino->sb->secLength) readBlock(file->ino->sb,block,buffer,start,start);
         if (end!=start && (file->pos+count-1)<blocksize) readBlock(file->ino->sb,block,buffer+end*file->ino->sb->secLength,end,end);
       }
@@ -1407,6 +1409,65 @@ int cpmCreat(struct cpmInode *dir, const char *fname, struct cpmInode *ino, mode
   updateTimeStamps(ino,extent);
   writePhysDirectory(dir->sb);
   return 0;
+}
+/*}}}*/
+/* cpmAttrGet         -- get CP/M attributes                     */ /*{{{*/
+int cpmAttrGet(struct cpmInode *ino, cpm_attr_t *attrib)
+{
+	*attrib = ino->attr;
+	return 0;
+}
+/*}}}*/
+/* cpmAttrSet         -- set CP/M attributes                     */ /*{{{*/
+int cpmAttrSet(struct cpmInode *ino, cpm_attr_t attrib)
+{
+  struct cpmSuperBlock *drive;
+  int extent;
+  int user;
+  char name[8], extension[3];
+  
+  memset(name,      0, sizeof(name));
+  memset(extension, 0, sizeof(extension));
+  drive  = ino->sb;
+  extent = ino->ino;
+  
+  /* Strip off existing attribute bits */
+  memcpy7(name,      drive->dir[extent].name, 8);
+  memcpy7(extension, drive->dir[extent].ext,  3);
+  user = drive->dir[extent].status;
+  
+  /* And set new ones */
+  if (attrib & CPM_ATTR_F1)   name[0]      |= 0x80;
+  if (attrib & CPM_ATTR_F2)   name[1]      |= 0x80;
+  if (attrib & CPM_ATTR_F3)   name[2]      |= 0x80;
+  if (attrib & CPM_ATTR_F4)   name[3]      |= 0x80;
+  if (attrib & CPM_ATTR_RO)   extension[0] |= 0x80;
+  if (attrib & CPM_ATTR_SYS)  extension[1] |= 0x80;
+  if (attrib & CPM_ATTR_ARCV) extension[2] |= 0x80;
+  
+  do 
+  {
+    memcpy(drive->dir[extent].name, name, 8);
+    memcpy(drive->dir[extent].ext, extension, 3);
+  } while ((extent=findFileExtent(drive, user,name,extension,extent+1,-1))!=-1);
+  if (writePhysDirectory(drive)==-1) return -1;
+
+  /* Update the stored (inode) copies of the file attributes and mode */
+  ino->attr=attrib;
+  if (attrib&CPM_ATTR_RO) ino->mode&=~(S_IWUSR|S_IWGRP|S_IWOTH);
+  else ino->mode|=(S_IWUSR|S_IWGRP|S_IWOTH);
+  
+  return 0;
+}
+/*}}}*/
+/* cpmChmod           -- set CP/M r/o & sys                      */ /*{{{*/
+int cpmChmod(struct cpmInode *ino, mode_t mode)
+{
+	/* Convert the chmod() into a chattr() call that affects RO */
+	int newatt = ino->attr & ~CPM_ATTR_RO;
+
+	if ((mode & (S_IWUSR|S_IWGRP|S_IWOTH))) newatt |= CPM_ATTR_RO;
+	return cpmAttrSet(ino, newatt);
 }
 /*}}}*/
 /* cpmSync            -- write directory back                    */ /*{{{*/
