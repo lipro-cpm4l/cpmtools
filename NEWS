@@ -1,8 +1,5 @@
-Changes since 1.9:
+Changes since 2.0:
 
-o  off-by-one bug in cpmRead fixed, which triggered an assertion
-   at the end of the disk
-o  return zero-value bytes when reading file holes
-o  new diskdefs format
-o  number of logical extents may be set
-o  fsed hacked to use cpmfs module
+o  Epson QX10 format added to diskdefs
+o  Extent computation fixed for blocksizes <= 1k and disk sizes >= 256 k
+o  Support for current libdsk

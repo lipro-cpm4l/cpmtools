@@ -16,7 +16,7 @@ struct Device
   int tracks;
   int sectrk;
 #if HAVE_LIBDSK_H
-  DSK_DRIVER   *dev;
+  DSK_PDRIVER   dev;
   DSK_GEOMETRY geom; 
 #endif
 #if HAVE_WINDOWS_H
