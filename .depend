@@ -1,0 +1,7 @@
+cpmcp.o:	cpmcp.c cpmfs.h
+cpmfs.o:	cpmfs.c cpmdir.h cpmfs.h
+cpmls.o:	cpmls.c cpmfs.h
+cpmrm.o:	cpmrm.c cpmfs.h
+fsck.o:	fsck.cpm.c cpmdir.h cpmfs.h
+fsed.o:	fsed.cpm.c
+mkfs.o:	mkfs.cpm.c cpmfs.h
