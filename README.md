@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/lipro-cpm4l/cpmtools.svg?branch=master)](https://travis-ci.org/lipro-cpm4l/cpmtools)
+
 cpmtools - Tools to access CP/M file systems
 ============================================
 
