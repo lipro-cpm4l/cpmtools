@@ -1,149 +1,20 @@
 /* #includes */ /*{{{C}}}*//*{{{*/
+#include "config.h"
+
 #include <assert.h>
 #include <ctype.h>
 #include <curses.h>
 #include <errno.h>
-#include <fcntl.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <time.h>
-#include <unistd.h>
+
+#include "cpmfs.h"
 /*}}}*/
 
 extern char **environ;
 
-struct diskDefs /*{{{*/
-{
-  int secLength;
-  int tracks;
-  int sectrk;
-  int blksiz;
-  int maxdir;
-  int skew;
-  int boottrk;
-  int type;
-  int fd;
-
-  int *skewtab;
-  int size;
-  int extents;
-  unsigned long bytes;
-};
-/*}}}*/
 static char *mapbuf;
-
-#define DR22  0
-#define P2DOS 1
-#define DR3   2
-
-/* physical sector I/O */
-/* readSector         -- read a physical sector                  */ /*{{{*/
-static int readSector(const struct diskDefs *drive, int track, int sector, char *buf)
-{
-  int res;
-
-  assert(sector>=0);
-  assert(sector<drive->sectrk);
-  assert(track>=0);
-  assert(track<drive->tracks);
-  if (lseek(drive->fd,(off_t)(sector+track*drive->sectrk)*drive->secLength,SEEK_SET)==-1) 
-  {
-    return -1;
-  }
-  if ((res=read(drive->fd, buf, drive->secLength)) != drive->secLength) 
-  {
-    if (res==-1)
-    {
-      return -1;
-    }
-    else memset(buf+res,0,drive->secLength-res); /* hit end of disk image */
-  }
-  return 0;
-}
-/*}}}*/
-/* writeSector        -- write physical sector                   */ /*{{{*/
-static int writeSector(const struct diskDefs *drive, int track, int sector, const char *buf)
-{
-  assert(sector>=0);
-  assert(sector<drive->sectrk);
-  assert(track>=0);
-  assert(track<drive->tracks);
-  if (lseek(drive->fd,(off_t)(sector+track*drive->sectrk)*drive->secLength, SEEK_SET)==-1)
-  {
-    return -1;
-  }
-  if (write(drive->fd, buf, drive->secLength) == drive->secLength) return 0;
-  return -1;
-}
-/*}}}*/
-
-/* getformat          -- get DPB and init in-core data for drive */ /*{{{*/
-static int getformat(const char *format, struct diskDefs *d)
-{
-  /* read format specific values from diskdefs file */ /*{{{*/
-  {
-    char buf[128],str[32],typestr[8];
-    FILE *fp;
-		  
-    if ((fp=fopen(DISKDEFS,"r"))==(FILE*)0 && (fp=fopen("diskdefs","r"))==(FILE*)0)
-    {
-      fprintf(stderr,"fsed.cm: Neither " DISKDEFS " nor diskdefs could be opened.\n");
-      exit(1);
-    }
-    while (fgets(buf,sizeof(buf),fp)!=(char*)0)
-    {
-      if (buf[0]=='#' || buf[0]=='\n') continue;
-      if (sscanf(buf,"%s %d %d %d %d %d %d %d %s\n",str,&(d->secLength),&(d->tracks),&(d->sectrk),&(d->blksiz),&(d->maxdir),&(d->skew),&(d->boottrk),typestr)!=9)
-      {
-        fprintf(stderr,"fsed.cpm: invalid line for format %s\n",format);
-        continue;
-      }
-      if (strcmp(str,format)==0) break;
-    }
-    fclose(fp);
-    if (strcmp(str,format))
-    {
-      fprintf(stderr,"fsed.cpm: unknown format %s\n",format);
-      exit(1);
-    }
-    if (strcmp(typestr,"p2dos")==0) d->type=P2DOS;
-    else if (strcmp(typestr,"2.2")==0) d->type=DR22;
-    else if (strcmp(typestr,"3")==0) d->type=DR3;
-    else
-    {
-      fprintf(stderr,"fsed.cpm: invalid operating system %s\n",typestr);
-      exit(1);
-    }
-    d->size=(d->secLength*d->sectrk*(unsigned long)(d->tracks-d->boottrk))/d->blksiz;
-    d->bytes=d->sectrk*d->tracks*(unsigned long)d->secLength;
-    d->extents=((d->size>=256 ? 8 : 16)*d->blksiz)/16384;
-  }
-  /*}}}*/
-  /* generate skew table */ /*{{{*/
-  {
-    int	i,j,k;
-
-    if (( d->skewtab = malloc(d->sectrk*sizeof(int))) == (int*)0) 
-    {
-      fprintf(stderr,"fsed.cpm: can not allocate memory for skew sector table\n");
-      exit(1);
-    }
-    for (i=j=0; i<d->sectrk; ++i,j=(j+d->skew)%d->sectrk)
-    {
-      while (1)
-      {
-        for (k=0; k<i && d->skewtab[k]!=j; ++k);
-        if (k<i) j=(j+1)%d->sectrk;
-        else break;
-      }
-      d->skewtab[i]=j;
-    }
-  }
-  /*}}}*/
-  return 0;
-}
-/*}}}*/
 
 static struct tm *cpmtime(char lday, char hday, char hour, char min) /*{{{*/
 {
@@ -175,7 +46,7 @@ static struct tm *cpmtime(char lday, char hday, char hour, char min) /*{{{*/
   return &tm;
 }
 /*}}}*/
-static void info(struct diskDefs *sb, const char *format, const char *image) /*{{{*/
+static void info(struct cpmSuperBlock *sb, const char *format, const char *image) /*{{{*/
 {
   const char *msg;
 
@@ -187,9 +58,9 @@ static void info(struct diskDefs *sb, const char *format, const char *image) /*{
   move(4,0); printw("                File system: ");
   switch (sb->type)
   {
-    case DR22: printw("CP/M 2.2"); break;
-    case P2DOS: printw("P2DOS 2.3"); break;
-    case DR3: printw("CP/M Plus"); break;
+    case CPMFS_DR22: printw("CP/M 2.2"); break;
+    case CPMFS_P2DOS: printw("P2DOS 2.3"); break;
+    case CPMFS_DR3: printw("CP/M Plus"); break;
   }
 
   move(6,0); printw("              Sector length: %d",sb->secLength);
@@ -208,7 +79,7 @@ static void info(struct diskDefs *sb, const char *format, const char *image) /*{
   getch();
 }
 /*}}}*/
-static void map(struct diskDefs *sb) /*{{{*/
+static void map(struct cpmSuperBlock *sb) /*{{{*/
 {
   const char *msg;
   char bmap[18*80];
@@ -224,18 +95,18 @@ static void map(struct diskDefs *sb) /*{{{*/
   memset(bmap,'S',system/secmap);
   directory=(sb->maxdir*32+sb->secLength-1)/sb->secLength;
   memset(bmap+system/secmap,'D',directory/secmap);
-  memset(bmap+(system+directory)/secmap,'.',sb->bytes/(sb->secLength*secmap));
+  memset(bmap+(system+directory)/secmap,'.',sb->sectrk*sb->tracks/secmap);
 
   for (pos=0; pos<(sb->maxdir*32+sb->secLength-1)/sb->secLength; ++pos)
   {
     int entry;
 
-    readSector(sb,sb->boottrk+pos/(sb->sectrk*sb->secLength),pos/sb->secLength,mapbuf);
+    Device_readSector(&sb->dev,sb->boottrk+pos/(sb->sectrk*sb->secLength),pos/sb->secLength,mapbuf);
     for (entry=0; entry<sb->secLength/32 && (pos*sb->secLength/32)+entry<sb->maxdir; ++entry)
     {
       int i;
 
-      if (mapbuf[entry*32]>=0 && mapbuf[entry*32]<=(sb->type==P2DOS ? 31 : 15))
+      if (mapbuf[entry*32]>=0 && mapbuf[entry*32]<=(sb->type==CPMFS_P2DOS ? 31 : 15))
       {
         for (i=0; i<16; ++i)
         {
@@ -265,7 +136,7 @@ static void map(struct diskDefs *sb) /*{{{*/
   getch();
 }
 /*}}}*/
-static void data(struct diskDefs *sb, const char *buf, unsigned long int pos) /*{{{*/
+static void data(struct cpmSuperBlock *sb, const char *buf, unsigned long int pos) /*{{{*/
 {
   int offset=(pos%sb->secLength)&~0x7f;
   int i;
@@ -281,13 +152,18 @@ static void data(struct diskDefs *sb, const char *buf, unsigned long int pos) /*
 }
 /*}}}*/
 
+const char cmd[]="fsed.cpm";
+
 int main(int argc, char *argv[]) /*{{{*/
 {
   /* variables */ /*{{{*/
+  const char *devopts=(const char*)0;
   char *image;
+  const char *err;
+  struct cpmSuperBlock drive;
+  struct cpmInode root;
   const char *format=FORMAT;
   int c,usage=0;
-  struct diskDefs sb;
   unsigned long pos;
   chtype ch;
   int reload;
@@ -298,6 +174,7 @@ int main(int argc, char *argv[]) /*{{{*/
   while ((c=getopt(argc,argv,"f:h?"))!=EOF) switch(c)
   {
     case 'f': format=optarg; break;
+    case 'T': devopts=optarg; break;
     case 'h':
     case '?': usage=1; break;
   }
@@ -312,15 +189,15 @@ int main(int argc, char *argv[]) /*{{{*/
   }
   /*}}}*/
   /* open image */ /*{{{*/
-  if ((sb.fd=open(image,O_RDONLY))==-1) 
+  if ((err=Device_open(&drive.dev,image,O_RDONLY,devopts))) 
   {
-    fprintf(stderr,"fsed.cpm: can not open %s: %s\n",image,strerror(errno));
+    fprintf(stderr,"%s: can not open %s (%s)\n",cmd,image,err);
     exit(1);
   }
+  cpmReadSuper(&drive,&root,format);
   /*}}}*/
-  getformat(format,&sb);
   /* alloc sector buffers */ /*{{{*/
-  if ((buf=malloc(sb.secLength))==(char*)0 || (mapbuf=malloc(sb.secLength))==(char*)0)
+  if ((buf=malloc(drive.secLength))==(char*)0 || (mapbuf=malloc(drive.secLength))==(char*)0)
   {
     fprintf(stderr,"fsed.cpm: can not allocate sector buffer (%s).\n",strerror(errno));
     exit(1);
@@ -344,49 +221,55 @@ int main(int argc, char *argv[]) /*{{{*/
     /* display position and load data */ /*{{{*/
     clear();
     move(2,0); printw("Byte %8d (0x%08x)  ",pos,pos);
-    if (pos<(sb.boottrk*sb.sectrk*sb.secLength))
+    if (pos<(drive.boottrk*drive.sectrk*drive.secLength))
     {
-      printw("Physical sector %3d  ",((pos/sb.secLength)%sb.sectrk)+1);
+      printw("Physical sector %3d  ",((pos/drive.secLength)%drive.sectrk)+1);
     }
     else
     {
-      printw("Sector %3d ",((pos/sb.secLength)%sb.sectrk)+1);
-      printw("(physical %3d)  ",sb.skewtab[(pos/sb.secLength)%sb.sectrk]+1);
+      printw("Sector %3d ",((pos/drive.secLength)%drive.sectrk)+1);
+      printw("(physical %3d)  ",drive.skewtab[(pos/drive.secLength)%drive.sectrk]+1);
     }
-    printw("Offset %5d  ",pos%sb.secLength);
-    printw("Track %5d",pos/(sb.secLength*sb.sectrk));
+    printw("Offset %5d  ",pos%drive.secLength);
+    printw("Track %5d",pos/(drive.secLength*drive.sectrk));
     move(LINES-3,0); printw("N)ext track    P)revious track");
     move(LINES-2,0); printw("n)ext record   n)revious record     f)orward byte      b)ackward byte");
     move(LINES-1,0); printw("i)nfo          q)uit");
     if (reload)
     {
-      int res;
+      const char *err;
 
-      if (pos<(sb.boottrk*sb.sectrk*sb.secLength)) res=readSector(&sb,pos/(sb.secLength*sb.sectrk),(pos/sb.secLength)%sb.sectrk,buf);
-      else res=readSector(&sb,pos/(sb.secLength*sb.sectrk),sb.skewtab[(pos/sb.secLength)%sb.sectrk],buf);
-      if (res==-1)
+      if (pos<(drive.boottrk*drive.sectrk*drive.secLength))
       {
-        move(4,0); printw("Data can not be read: %s",strerror(errno));
+        err=Device_readSector(&drive.dev,pos/(drive.secLength*drive.sectrk),(pos/drive.secLength)%drive.sectrk,buf);
+      }
+      else
+      {
+        err=Device_readSector(&drive.dev,pos/(drive.secLength*drive.sectrk),drive.skewtab[(pos/drive.secLength)%drive.sectrk],buf);
+      }
+      if (err)
+      {
+        move(4,0); printw("Data can not be read: %s",err);
       }
       else reload=0;
     }
     /*}}}*/
 
     if /* position before end of system area */ /*{{{*/
-    (pos<(sb.boottrk*sb.sectrk*sb.secLength))
+    (pos<(drive.boottrk*drive.sectrk*drive.secLength))
     {
       const char *msg;
 
       msg="System area"; move(0,(COLS-strlen(msg))/2); printw(msg);
       move(LINES-3,36); printw("F)orward 16 byte   B)ackward 16 byte");
-      if (!reload) data(&sb,buf,pos);
+      if (!reload) data(&drive,buf,pos);
       switch (ch=getch())
       {
         case 'F': /* next 16 byte */ /*{{{*/
         {
-          if (pos+16<sb.bytes)
+          if (pos+16<(drive.sectrk*drive.tracks*(unsigned long)drive.secLength))
           {
-            if (pos/sb.secLength!=(pos+16)/sb.secLength) reload=1;
+            if (pos/drive.secLength!=(pos+16)/drive.secLength) reload=1;
             pos+=16;
           }
           break;
@@ -396,7 +279,7 @@ int main(int argc, char *argv[]) /*{{{*/
         {
           if (pos>=16)
           {
-            if (pos/sb.secLength!=(pos-16)/sb.secLength) reload=1;
+            if (pos/drive.secLength!=(pos-16)/drive.secLength) reload=1;
             pos-=16;
           }
           break;
@@ -406,11 +289,11 @@ int main(int argc, char *argv[]) /*{{{*/
     }
     /*}}}*/
     else if /* position before end of directory area */ /*{{{*/
-    (pos<(sb.boottrk*sb.sectrk*sb.secLength+sb.maxdir*32))
+    (pos<(drive.boottrk*drive.sectrk*drive.secLength+drive.maxdir*32))
     {
       const char *msg;
-      unsigned long entrystart=(pos&~0x1f)%sb.secLength;
-      int entry=(pos-(sb.boottrk*sb.sectrk*sb.secLength))>>5;
+      unsigned long entrystart=(pos&~0x1f)%drive.secLength;
+      int entry=(pos-(drive.boottrk*drive.sectrk*drive.secLength))>>5;
       int offset=pos&0x1f;
 
       msg="Directory area"; move(0,(COLS-strlen(msg))/2); printw(msg);
@@ -418,7 +301,7 @@ int main(int argc, char *argv[]) /*{{{*/
 
       move(13,0); printw("Entry %3d: ",entry);      
       if /* free or used directory entry */ /*{{{*/
-      ((buf[entrystart]>=0 && buf[entrystart]<=(sb.type==P2DOS ? 31 : 15)) || buf[entrystart]==(char)0xe5)
+      ((buf[entrystart]>=0 && buf[entrystart]<=(drive.type==CPMFS_P2DOS ? 31 : 15)) || buf[entrystart]==(char)0xe5)
       {
         int i;
 
@@ -452,7 +335,7 @@ int main(int argc, char *argv[]) /*{{{*/
           printw("%c",buf[entrystart+9+i]&0x7f);
           attroff(A_REVERSE);
         }
-        move(16,0); printw("Extent: %3d",((buf[entrystart+12]&0xff)+((buf[entrystart+14]&0xff)<<5))/sb.extents);
+        move(16,0); printw("Extent: %3d",((buf[entrystart+12]&0xff)+((buf[entrystart+14]&0xff)<<5))/drive.extents);
         printw(" (low: ");
         if (offset==12) attron(A_REVERSE);
         printw("%2d",buf[entrystart+12]&0xff);
@@ -474,7 +357,7 @@ int main(int argc, char *argv[]) /*{{{*/
         for (i=0; i<16; ++i)
         {
           unsigned int block=buf[entrystart+16+i]&0xff;
-          if (sb.size>=256)
+          if (drive.size>=256)
           {
             printw(" ");
             if (offset==16+i || offset==16+i+1) attron(A_REVERSE);
@@ -492,7 +375,7 @@ int main(int argc, char *argv[]) /*{{{*/
       }
       /*}}}*/
       else if /* disc label */ /*{{{*/
-      (buf[entrystart]==0x20 && sb.type==DR3)
+      (buf[entrystart]==0x20 && drive.type==CPMFS_DR3)
       {
         int i;
         const struct tm *tm;
@@ -573,7 +456,7 @@ int main(int argc, char *argv[]) /*{{{*/
       }
       /*}}}*/
       else if /* time stamp */ /*{{{*/
-      (buf[entrystart]==0x21 && (sb.type==P2DOS || sb.type==DR3))
+      (buf[entrystart]==0x21 && (drive.type==CPMFS_P2DOS || drive.type==CPMFS_DR3))
       {
         const struct tm *tm;
         char s[30];
@@ -673,7 +556,7 @@ int main(int argc, char *argv[]) /*{{{*/
       }
       /*}}}*/
       else if /* password */ /*{{{*/
-      (buf[entrystart]>=16 && buf[entrystart]<=31 && sb.type==DR3)
+      (buf[entrystart]>=16 && buf[entrystart]<=31 && drive.type==CPMFS_DR3)
       {
         int i;
 
@@ -730,14 +613,14 @@ int main(int argc, char *argv[]) /*{{{*/
         attroff(A_REVERSE);
       }
       /*}}}*/
-      if (!reload) data(&sb,buf,pos);
+      if (!reload) data(&drive,buf,pos);
       switch (ch=getch())
       {
         case 'F': /* next entry */ /*{{{*/
         {
-          if (pos+32<sb.bytes)
+          if (pos+32<(drive.sectrk*drive.tracks*(unsigned long)drive.secLength))
           {
-            if (pos/sb.secLength!=(pos+32)/sb.secLength) reload=1;
+            if (pos/drive.secLength!=(pos+32)/drive.secLength) reload=1;
             pos+=32;
           }
           break;
@@ -747,7 +630,7 @@ int main(int argc, char *argv[]) /*{{{*/
         {
           if (pos>=32)
           {
-            if (pos/sb.secLength!=(pos-32)/sb.secLength) reload=1;
+            if (pos/drive.secLength!=(pos-32)/drive.secLength) reload=1;
             pos-=32;
           }
           break;
@@ -761,7 +644,7 @@ int main(int argc, char *argv[]) /*{{{*/
       const char *msg;
 
       msg="Data area"; move(0,(COLS-strlen(msg))/2); printw(msg);
-      if (!reload) data(&sb,buf,pos);
+      if (!reload) data(&drive,buf,pos);
       ch=getch();
     }
     /*}}}*/
@@ -771,9 +654,9 @@ int main(int argc, char *argv[]) /*{{{*/
     {
       case 'n': /* next record */ /*{{{*/
       {
-        if (pos+128<sb.bytes);
+        if (pos+128<(drive.sectrk*drive.tracks*(unsigned long)drive.secLength))
         {
-          if (pos/sb.secLength!=(pos+128)/sb.secLength) reload=1;
+          if (pos/drive.secLength!=(pos+128)/drive.secLength) reload=1;
           pos+=128;
         }
         break;
@@ -783,7 +666,7 @@ int main(int argc, char *argv[]) /*{{{*/
       {
         if (pos>=128)
         {
-          if (pos/sb.secLength!=(pos-128)/sb.secLength) reload=1;
+          if (pos/drive.secLength!=(pos-128)/drive.secLength) reload=1;
           pos-=128;
         }
         break;
@@ -791,9 +674,9 @@ int main(int argc, char *argv[]) /*{{{*/
       /*}}}*/
       case 'N': /* next track */ /*{{{*/
       {
-        if ((pos+sb.sectrk*sb.secLength)<sb.bytes)
+        if ((pos+drive.sectrk*drive.secLength)<(drive.sectrk*drive.tracks*drive.secLength))
         {
-          pos+=sb.sectrk*sb.secLength;
+          pos+=drive.sectrk*drive.secLength;
           reload=1;
         }
         break;
@@ -801,9 +684,9 @@ int main(int argc, char *argv[]) /*{{{*/
       /*}}}*/
       case 'P': /* previous track */ /*{{{*/
       {
-        if (pos>sb.sectrk*sb.secLength)
+        if (pos>drive.sectrk*drive.secLength)
         {
-          pos-=sb.sectrk*sb.secLength;
+          pos-=drive.sectrk*drive.secLength;
           reload=1;
         }
         break;
@@ -813,7 +696,7 @@ int main(int argc, char *argv[]) /*{{{*/
       {
         if (pos)
         {
-          if (pos/sb.secLength!=(pos-1)/sb.secLength) reload=1;
+          if (pos/drive.secLength!=(pos-1)/drive.secLength) reload=1;
           --pos;
         }
         break;
@@ -821,16 +704,16 @@ int main(int argc, char *argv[]) /*{{{*/
       /*}}}*/
       case 'f': /* byte forward */ /*{{{*/
       {
-        if (pos+1<sb.tracks*sb.sectrk*sb.secLength)
+        if (pos+1<drive.tracks*drive.sectrk*drive.secLength)
         {
-          if (pos/sb.secLength!=(pos+1)/sb.secLength) reload=1;
+          if (pos/drive.secLength!=(pos+1)/drive.secLength) reload=1;
           ++pos;
         }
         break;
       }
       /*}}}*/
-      case 'i': info(&sb,format,image); break;
-      case 'm': map(&sb); break;
+      case 'i': info(&drive,format,image); break;
+      case 'm': map(&drive); break;
     }
     /*}}}*/
   } while (ch!='q');

@@ -1,0 +1,8 @@
+Changes since 1.9:
+
+o  off-by-one bug in cpmRead fixed, which triggered an assertion
+   at the end of the disk
+o  return zero-value bytes when reading file holes
+o  new diskdefs format
+o  number of logical extents may be set
+o  fsed hacked to use cpmfs module

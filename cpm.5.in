@@ -1,7 +1,7 @@
 .\" Believe it or not, reportedly there are nroffs which do not know \(en
 .if n .ds en -
 .if t .ds en \(en
-.TH CPM 5 "July 2, 1997" "CP/M tools" "File formats"
+.TH CPM 5 "@UPDATED@" "CP/M tools" "File formats"
 .SH NAME \"{{{roff}}}\"{{{
 cpm \- CP/M disk and file system format
 .\"}}}
@@ -110,16 +110,17 @@ zero, only non-privileged commands may be executed.
 .\"}}}
 .LP
 .\"{{{ Xl, Xh = extent number
-\fBXl\fP and \fBXh\fP store the extent number.
-A file may use more than one directory entry, if it contains more blocks
-than an extent can hold.  In this case, more extents are allocated and each
-of them is numbered sequentially with an extent number.  If a physical
-extent stores more than one logical extent, the extent number of the
-last used logical extent is stored.
-CP/M 2.2 allows 512 extents per file, CP/M 3 and higher allow up to 2048.
-Bit 5\*(en7 of Xl are 0, bit 0\*(en4 store the lower bits of the
-extent number.  Bit 6 and 7 of Xh are 0, bit 0\*(en5 store the higher bits of
-the extent number.
+\fBXl\fP and \fBXh\fP store the extent number.  A file may use more than
+one directory entry, if it contains more blocks than an extent can hold.
+In this case, more extents are allocated and each of them is numbered
+sequentially with an extent number.  If a physical extent stores more than
+16k, it is considered to contain multiple logical extents, each pointing
+to 16k data, and the extent number of the last used logical extent
+is stored.  Note: Some formats decided to always store only one logical
+extent in a physical extent, thus wasting extent space.  CP/M 2.2 allows
+512 extents per file, CP/M 3 and higher allow up to 2048.  Bit 5\*(en7 of
+Xl are 0, bit 0\*(en4 store the lower bits of the extent number.  Bit 6
+and 7 of Xh are 0, bit 0\*(en5 store the higher bits of the extent number.
 .\"}}}
 .LP
 .\"{{{ Rc, Bc = record count, byte count
@@ -139,7 +140,9 @@ A block pointer of 0 marks a hole in the file.  If a hole
 covers the range of a full extent, the extent will not be allocated.  In particular,
 the first extent of a file does not neccessarily have extent number 0.
 A file may not share blocks with other files, as its blocks would be freed
-if the other files is erased without a following disk system reset.
+if the other files is erased without a following disk system reset.  CP/M returns
+EOF when it reaches a hole, whereas UNIX returns zero-value bytes, which makes
+holes invisible.
 .\"}}}
 .\"}}}
 .SS "Time stamps" \"{{{

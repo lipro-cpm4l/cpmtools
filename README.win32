@@ -1,0 +1,27 @@
+Compiling on Win32 systems:
+
+  It's best to do this using mingw32 and standard configure commands. The 
+makefiles for Microsoft C and Borland C are pretty outdated and don't 
+understand LibDsk. 
+
+For Microsoft C++ (eg: Visual C++ 6.0):
+
+* Run the VCVARS32 command to set up the command-line compiler.
+* Build the CPMTOOLS programs with NMAKE /F MAKEFILE.MSC
+
+For Borland C++ 5.x:
+
+* Use Makefile.bcc
+
+  I have not found a working Curses library for Win32, so fsed.cpm has not
+been touched. 
+
+  Under Windows 95/98, if a program name has more than one dot, you have to
+add the ".exe" extension to the command. So you should use "fsck.cpm.exe" 
+rather than just "fsck.cpm".
+
+  If you have appropriate rights, the CPMTOOLS should be able to access
+the floppy drive by using "A:" or "B:" as the name of the disc image. 
+"mkfs.cpm" and "fsed.cpm" don't have this capability.
+
+John Elliott, 18 June 2000  
