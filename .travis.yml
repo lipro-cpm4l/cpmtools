@@ -5,4 +5,4 @@ before_install:
   - sudo apt-get install -y fakeroot
   - sudo apt-get install -y build-essential
   - sudo apt-get install -y libncurses-dev
-script: ./configure --prefix=/usr && make all && make fsck.test && fakeroot mkdir -p ${HOME}/sysroot/usr/share ${HOME}/sysroot/usr/bin ${HOME}/sysroot/usr/share/man/man1 && fakeroot make BINDIR=${HOME}/sysroot/usr/bin MANDIR=${HOME}/sysroot/usr/share/man prefix=${HOME}/sysroot/usr install
+script: ./configure --prefix=/usr && make all && make fsck.test && fakeroot mkdir -p ${HOME}/sysroot/usr/share ${HOME}/sysroot/usr/bin ${HOME}/sysroot/usr/share/man/man1 ${HOME}/sysroot/usr/share/man/man5 && fakeroot make BINDIR=${HOME}/sysroot/usr/bin MANDIR=${HOME}/sysroot/usr/share/man prefix=${HOME}/sysroot/usr install
