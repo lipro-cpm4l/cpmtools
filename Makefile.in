@@ -20,7 +20,7 @@ LIBS=           @LIBS@ @LDLIBS@
 LDDEPS=		@LDDEPS@
 CPPFLAGS=	-DDISKDEFS=\"@datadir@/diskdefs\" -DFORMAT=\"$(DEFFORMAT)\"
 #
-# [JCE] I'm only a novice and I haven't worked out how to autoconf this one
+# I'm only a novice and I haven't worked out how to autoconf this one
 #
 
 #MAKEDEPEND=	mkdep -d
@@ -100,7 +100,7 @@ clean:
 		rm -f *$(OBJEXT) *.1 *.5
 
 distclean:	clean
-		rm -f $(ALL) config.log config.cache config.h config.status Makefile *.out 
+		rm -rf $(ALL) autom4te.cache config.log config.cache config.h config.status Makefile *.out 
 
 tar:		distclean
 		(b=`pwd`; b=`basename $$b`; cd ..; tar zcvf $$b.tar.gz $$b)

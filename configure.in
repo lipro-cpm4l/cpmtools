@@ -1,8 +1,8 @@
 AC_INIT(cpmfs.c)
 AC_CONFIG_HEADER(config.h)
 AC_CANONICAL_HOST
-VERSION=2.4
-UPDATED='Oct 6, 2004'
+VERSION=2.5
+UPDATED='Oct 19, 2005'
 
 DEVICE="posix"
 
@@ -10,12 +10,6 @@ if test "$prefix" = NONE
 then
   case $host in
     *-linux-*)
-      PIPE="-pipe "
-    ;;
-  esac
-  case $host in
-    *-netbsd*)
-      PIPE="-pipe "
     ;;
   esac
 fi
@@ -26,8 +20,11 @@ AC_PROG_CPP
 
 if test "$GCC" = yes
 then
-  CFLAGS="${CFLAGS} ${PIPE}-Wmissing-prototypes -Wstrict-prototypes -Wcast-qual -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-declarations -Wnested-externs -pedantic -fno-common"
-  LDFLAGS='-g'
+  CFLAGS="${CFLAGS} ${EXTRA_GCFLAGS}-pipe -Wall -Wno-unused -Wshadow -Wbad-function-cast -Wmissing-prototypes -Wstrict-prototypes -Wcast-align -Wcast-qual -Wpointer-arith -Wwrite-strings -Wmissing-declarations -Wnested-externs -Wundef -pedantic -fno-common"
+  LDFLAGS="${LDFLAGS} ${EXTRA_GLDFLAGS}-g"
+else
+  CFLAGS="${CFLAGS} ${EXTRA_CFLAGS}"
+  LDFLAGS="${LDFLAGS} ${EXTRA_LDFLAGS}"
 fi
 
 AC_ARG_WITH(defformat,[  --with-defformat        Specify default format (ibm-3740)], 
