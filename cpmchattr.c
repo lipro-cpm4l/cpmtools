@@ -60,12 +60,12 @@ int main(int argc, char *argv[]) /*{{{*/
   for (i=0; i<gargc; ++i)
   {
     struct cpmInode ino;
-    int err;
+    int rc;
     cpm_attr_t attrib;
 
-    err = cpmNamei(&root,gargv[i], &ino)==-1;
-    if (!err) err = cpmAttrGet(&ino, &attrib);
-    if (!err)
+    rc = cpmNamei(&root,gargv[i], &ino)==-1;
+    if (!rc) rc = cpmAttrGet(&ino, &attrib);
+    if (!rc)
     {
         int n, m;
         m = 0;
@@ -93,9 +93,9 @@ int main(int argc, char *argv[]) /*{{{*/
           } 
           if (m) attrib &= ~mask; else attrib |= mask;
 	}
-        err = cpmAttrSet(&ino, attrib);
+        rc = cpmAttrSet(&ino, attrib);
     }
-    if (err)
+    if (rc)
     {
       fprintf(stderr,"%s: can not set attributes for %s: %s\n",cmd,gargv[i],boo);
       exitcode=1;

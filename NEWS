@@ -1,3 +1,5 @@
-Changes since 2.3:
+Changes since 2.4:
 
-o  diskdefs typo ibm-8ss fixed
+o  diskdefs entry for P112a
+o  small bugs in fsed.cpm fixed
+

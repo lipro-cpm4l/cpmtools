@@ -83,7 +83,7 @@ static void map(struct cpmSuperBlock *sb) /*{{{*/
 {
   const char *msg;
   char bmap[18*80];
-  int secmap,pos,system,directory;
+  int secmap,pos,sys,directory;
 
   clear();
   msg="Data map";
@@ -91,11 +91,11 @@ static void map(struct cpmSuperBlock *sb) /*{{{*/
 
   secmap=(sb->tracks*sb->sectrk+80*18-1)/(80*18);
   memset(bmap,' ',sizeof(bmap));
-  system=sb->boottrk*sb->sectrk;
-  memset(bmap,'S',system/secmap);
+  sys=sb->boottrk*sb->sectrk;
+  memset(bmap,'S',sys/secmap);
   directory=(sb->maxdir*32+sb->secLength-1)/sb->secLength;
-  memset(bmap+system/secmap,'D',directory/secmap);
-  memset(bmap+(system+directory)/secmap,'.',sb->sectrk*sb->tracks/secmap);
+  memset(bmap+sys/secmap,'D',directory/secmap);
+  memset(bmap+(sys+directory)/secmap,'.',sb->sectrk*sb->tracks/secmap);
 
   for (pos=0; pos<(sb->maxdir*32+sb->secLength-1)/sb->secLength; ++pos)
   {
@@ -233,12 +233,10 @@ int main(int argc, char *argv[]) /*{{{*/
     printw("Offset %5d  ",pos%drive.secLength);
     printw("Track %5d",pos/(drive.secLength*drive.sectrk));
     move(LINES-3,0); printw("N)ext track    P)revious track");
-    move(LINES-2,0); printw("n)ext record   n)revious record     f)orward byte      b)ackward byte");
+    move(LINES-2,0); printw("n)ext record   p)revious record     f)orward byte      b)ackward byte");
     move(LINES-1,0); printw("i)nfo          q)uit");
     if (reload)
     {
-      const char *err;
-
       if (pos<(drive.boottrk*drive.sectrk*drive.secLength))
       {
         err=Device_readSector(&drive.dev,pos/(drive.secLength*drive.sectrk),(pos/drive.secLength)%drive.sectrk,buf);
@@ -413,11 +411,11 @@ int main(int argc, char *argv[]) /*{{{*/
         printw("Password: ");
         for (i=0; i<8; ++i)
         {
-          char c;
+          char printable;
 
           if (offset==16+(7-i)) attron(A_REVERSE);
-          c=(buf[entrystart+16+(7-i)]^buf[entrystart+13])&0x7f;
-          printw("%c",isprint(c) ? c : ' ');
+          printable=(buf[entrystart+16+(7-i)]^buf[entrystart+13])&0x7f;
+          printw("%c",isprint(printable) ? printable : ' ');
           attroff(A_REVERSE);
         }
         printw(" XOR value: ");
@@ -592,11 +590,11 @@ int main(int argc, char *argv[]) /*{{{*/
         printw("Password: ");
         for (i=0; i<8; ++i)
         {
-          char c;
+          char printable;
 
           if (offset==16+(7-i)) attron(A_REVERSE);
-          c=(buf[entrystart+16+(7-i)]^buf[entrystart+13])&0x7f;
-          printw("%c",isprint(c) ? c : ' ');
+          printable=(buf[entrystart+16+(7-i)]^buf[entrystart+13])&0x7f;
+          printw("%c",isprint(printable) ? printable : ' ');
           attroff(A_REVERSE);
         }
         printw(" XOR value: ");
@@ -684,7 +682,7 @@ int main(int argc, char *argv[]) /*{{{*/
       /*}}}*/
       case 'P': /* previous track */ /*{{{*/
       {
-        if (pos>drive.sectrk*drive.secLength)
+        if (pos>=drive.sectrk*drive.secLength)
         {
           pos-=drive.sectrk*drive.secLength;
           reload=1;

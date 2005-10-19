@@ -178,6 +178,17 @@ diskdef ibm-8ss
   os 2.2
 end
 
+diskdef ibm-8ds
+  seclen 512
+  tracks 40
+  sectrk 8
+  blocksize 1024
+  maxdir 64
+  skew 0
+  boottrk 1
+  os 2.2
+end
+
 diskdef electroglas
   seclen 512
   tracks 80
@@ -185,6 +196,55 @@ diskdef electroglas
   blocksize 2048
   maxdir 256
   skew 0
+  boottrk 1
+  os 3
+end
+
+# IBM CP/M-86
+# setfdprm /dev/fd1 sect=8 dtr=1 hd ssize=512 tpi=48 head=1
+diskdef ibmpc-514ss
+   seclen 512
+   tracks 40
+   sectrk 8
+   blocksize 1024
+   maxdir 64
+   skew 1
+   boottrk 1
+   os 2.2
+end
+
+# IBM CP/M-86
+# setfdprm /dev/fd1 sect=8 dtr=1 hd ssize=512 tpi=48
+diskdef ibmpc-514ds
+   seclen 512
+   tracks 80
+   sectrk 8
+   blocksize 2048
+   maxdir 64
+   skew 0
+   boottrk 2
+   os 2.2
+end
+
+diskdef p112
+  seclen 512
+  tracks 160
+  sectrk 18
+  blocksize 2048
+  maxdir 128
+  skew 1
+  boottrk 1
+  os 3
+end
+
+
+diskdef p112a
+  seclen 512
+  tracks 160
+  sectrk 18
+  blocksize 2048
+  maxdir 256
+  skew 1
   boottrk 1
   os 3
 end
