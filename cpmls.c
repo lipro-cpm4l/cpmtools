@@ -30,7 +30,7 @@ static void olddir(char **dirent, int entries)
   {
     for (i=l=0; i<entries; ++i)
     {
-      if (dirent[i][0]=='0'+user/10 && dirent[i][1]=='0'+user%33)
+      if (dirent[i][0]=='0'+user/10 && dirent[i][1]=='0'+user%10)
       {
         if (announce==1)
         {
@@ -45,9 +45,15 @@ static void olddir(char **dirent, int entries)
         for (; k<3; ++k) putchar(' ');
         ++l;
       }
-      if (l && (l%4)==0) putchar('\n');
+      if (l && (l%4)==0) {
+	l = 0;
+	putchar('\n');
+      }	
     }
-    if (l%4) putchar('\n');
+    if (l%4) {
+	putchar('\n');
+    }
+
     if (announce==2) announce=1;
   }
   if (entries==0) printf("No files\n");
@@ -75,7 +81,7 @@ static void oldddir(char **dirent, int entries, struct cpmInode *ino)
       {
         struct tm *tmp;
 
-        if (dirent[i][0]=='0'+user/10 && dirent[i][1]=='0'+user%33)
+        if (dirent[i][0]=='0'+user/10 && dirent[i][1]=='0'+user%10)
         {
           if (announce==1)
           {
@@ -93,7 +99,9 @@ static void oldddir(char **dirent, int entries, struct cpmInode *ino)
 
           cpmNamei(ino,dirent[i],&file);
           cpmStat(&file,&statbuf);
-          printf(" %5.1ldK",(statbuf.size+buf.f_bsize-1)/buf.f_bsize*(buf.f_bsize/1024));
+          printf(" %5.1ldK",(long) (statbuf.size+buf.f_bsize-1) /
+			buf.f_bsize*(buf.f_bsize/1024));
+
           printf(" %6.1ld ",(long)(statbuf.size/128));
           putchar(statbuf.mode&0200 ? ' ' : 'R');
           putchar(statbuf.mode&01000 ? 'S' : ' ');
@@ -138,7 +146,7 @@ static void old3dir(char **dirent, int entries, struct cpmInode *ino)
       {
         struct tm *tmp;
 
-        if (dirent[i][0]=='0'+user/10 && dirent[i][1]=='0'+user%33)
+        if (dirent[i][0]=='0'+user/10 && dirent[i][1]=='0'+user%10)
         {
           cpmNamei(ino,dirent[i],&file);
           cpmStat(&file,&statbuf);
@@ -160,7 +168,8 @@ static void old3dir(char **dirent, int entries, struct cpmInode *ino)
 
           totalBytes+=statbuf.size;
           totalRecs+=(statbuf.size+127)/128;
-          printf(" %5.1ldk",(statbuf.size+buf.f_bsize-1)/buf.f_bsize*(buf.f_bsize/1024));
+          printf(" %5.1ldk",(long) (statbuf.size+buf.f_bsize-1) /
+			buf.f_bsize*(buf.f_bsize/1024));
           printf(" %6.1ld ",(long)(statbuf.size/128));
           putchar((attrib & CPM_ATTR_F1)   ? '1' : ' ');
           putchar((attrib & CPM_ATTR_F2)   ? '2' : ' ');
@@ -210,7 +219,7 @@ static void ls(char **dirent, int entries, struct cpmInode *ino, int l, int c, i
     announce=0;
     for (i=0; i<entries; ++i) if (dirent[i][0]!='.')
     {
-      if (dirent[i][0]=='0'+user/10 && dirent[i][1]=='0'+user%33)
+      if (dirent[i][0]=='0'+user/10 && dirent[i][1]=='0'+user%10)
       {
         if (announce==0)
         {
@@ -224,7 +233,7 @@ static void ls(char **dirent, int entries, struct cpmInode *ino, int l, int c, i
           cpmNamei(ino,dirent[i],&file);
           cpmStat(&file,&statbuf);
         }
-        if (iflag) printf("%4ld ",statbuf.ino);
+        if (iflag) printf("%4ld ",(long) statbuf.ino);
         if (l)
         {
           struct tm *tmp;
@@ -272,7 +281,7 @@ static void lsattr(char **dirent, int entries, struct cpmInode *ino)
     announce=0;
     for (i=0; i<entries; ++i) if (dirent[i][0]!='.')
     {
-      if (dirent[i][0]=='0'+user/10 && dirent[i][1]=='0'+user%33)
+      if (dirent[i][0]=='0'+user/10 && dirent[i][1]=='0'+user%10)
       {
         if (announce==0)
         {

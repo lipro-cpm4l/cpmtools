@@ -566,11 +566,14 @@ void cpmglob(int optin, int argc, char * const argv[], struct cpmInode *root, in
   }
   for (i=optin; i<argc; ++i)
   {
-    for (j=0; j<entries; ++j) if (i<argc && match(dirent[j].name,argv[i]))
+    for (j=0; j<entries; ++j)
+    {
+     if (match(dirent[j].name,argv[i]))
     {
       if (*gargc==gargcap) *gargv=realloc(*gargv,sizeof(char*)*(gargcap ? (gargcap*=2) : (gargcap=16)));
       (*gargv)[*gargc]=strcpy(malloc(strlen(dirent[j].name)+1),dirent[j].name);
       ++*gargc;
+    }
     }
   }
 }
