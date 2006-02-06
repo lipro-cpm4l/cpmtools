@@ -231,19 +231,18 @@ diskdef p112
   tracks 160
   sectrk 18
   blocksize 2048
-  maxdir 128
+  maxdir 256
   skew 1
-  boottrk 1
+  boottrk 2
   os 3
 end
 
-
-diskdef p112a
+diskdef p112-old
   seclen 512
   tracks 160
   sectrk 18
   blocksize 2048
-  maxdir 256
+  maxdir 128
   skew 1
   boottrk 1
   os 3

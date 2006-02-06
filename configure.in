@@ -2,7 +2,7 @@ AC_INIT(cpmfs.c)
 AC_CONFIG_HEADER(config.h)
 AC_CANONICAL_HOST
 VERSION=2.5
-UPDATED='Oct 19, 2005'
+UPDATED='February 6, 2006'
 
 DEVICE="posix"
 

@@ -220,18 +220,18 @@ int main(int argc, char *argv[]) /*{{{*/
   {
     /* display position and load data */ /*{{{*/
     clear();
-    move(2,0); printw("Byte %8d (0x%08x)  ",pos,pos);
+    move(2,0); printw("Byte %8lu (0x%08lx)  ",pos,pos);
     if (pos<(drive.boottrk*drive.sectrk*drive.secLength))
     {
-      printw("Physical sector %3d  ",((pos/drive.secLength)%drive.sectrk)+1);
+      printw("Physical sector %3lu  ",((pos/drive.secLength)%drive.sectrk)+1);
     }
     else
     {
-      printw("Sector %3d ",((pos/drive.secLength)%drive.sectrk)+1);
+      printw("Sector %3lu ",((pos/drive.secLength)%drive.sectrk)+1);
       printw("(physical %3d)  ",drive.skewtab[(pos/drive.secLength)%drive.sectrk]+1);
     }
-    printw("Offset %5d  ",pos%drive.secLength);
-    printw("Track %5d",pos/(drive.secLength*drive.sectrk));
+    printw("Offset %5lu  ",pos%drive.secLength);
+    printw("Track %5lu",pos/(drive.secLength*drive.sectrk));
     move(LINES-3,0); printw("N)ext track    P)revious track");
     move(LINES-2,0); printw("n)ext record   p)revious record     f)orward byte      b)ackward byte");
     move(LINES-1,0); printw("i)nfo          q)uit");
