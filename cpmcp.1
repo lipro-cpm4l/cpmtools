@@ -1,37 +1,55 @@
-.TH CPMLS 1 "@UPDATED@" "CP/M tools" "User commands"
+.TH CPMCP 1 "November 26, 2007" "CP/M tools" "User commands"
 .SH NAME \"{{{roff}}}\"{{{
-cpmls \- list sorted contents of directory
+cpmcp \- copy files from and to CP/M disks
 .\"}}}
 .SH SYNOPSIS \"{{{
 .ad l
-.B cpmls
-.RB [ \-d | \-D | \-F | \-A | \-l [ \-c ][ \-i ]]
+.B cpmcp
 .RB [ \-f
 .IR format ]
+.RB [ \-t ]
 .I image
-.RI [ file-pattern "...]"
+\fIuser\fP\fB:\fP\fIfile\fP \fIfile\fP
+.br
+.B cpmcp
+.RB [ \-f
+.IR format ]
+.RB [ \-t ]
+.I image
+\fIuser\fP\fB:\fP\fIfile\fP ... \fIdirectory\fP
+.br
+.B cpmcp
+.RB [ \-f
+.IR format ]
+.RB [ \-t ]
+.I image
+\fIfile\fP \fIuser\fP\fB:\fP\fIfile\fP
+.br
+.B cpmcp
+.RB [ \-f
+.IR format ]
+.RB [ \-t ]
+.I image
+\fIfile\fP ... \fIuser\fP\fB:\fP
 .ad b
 .\"}}}
 .SH DESCRIPTION \"{{{
-\fBCpmls\fP lists the sorted contents of the directory.
+\fBcpmcp\fP copies one or more files to or from a CP/M disk.  When copying
+multiple files, the last argument must be a drive or directory.  The drive
+letter does not matter because the device is specified by the image, it is
+only used to specify which direction you want to copy.  The user number is
+specified after the drive letter, if omitted user 0 is used.
+.PP
+You can use \fB*\fP and \fB?\fP in CP/M file names, which have the same
+meaning in
+.IR sh (1)
+file name patterns.
 .\"}}}
 .SH OPTIONS \"{{{
 .IP "\fB\-f\fP \fIformat\fP"
 Use the given CP/M disk \fIformat\fP instead of the default format.
-.IP \fB\-d\fP
-Old CP/M 2.2 dir output.
-.IP \fB\-D\fP
-P2DOS 2.3 ddir-like output.
-.IP \fB\-F\fp
-CP/M 3.x dir output.
-.IP \fB\-A\fp
-E2fs lsattr-like output.
-.IP \fB\-l\fP
-Long UNIX-style directory listing including size, time stamp and user number.
-.IP \fB\-c\fP
-Output the creation time, not the modification time.
-.IP \fB\-i\fP
-Print index number of each file.
+.IP \fB\-t\fP
+Convert text files between CP/M and UNIX conventions.
 .\"}}}
 .SH "RETURN VALUE" \"{{{
 Upon successful completion, exit code 0 is returned.
@@ -40,7 +58,7 @@ Upon successful completion, exit code 0 is returned.
 Any errors are indicated by exit code 1.
 .\"}}}
 .SH FILES \"{{{
-@DATADIR@/diskdefs	CP/M disk format definitions
+${prefix}/share/diskdefs	CP/M disk format definitions
 .\"}}}
 .SH AUTHORS \"{{{
 This program is copyright 1997\(en2007 Michael Haardt
@@ -62,6 +80,6 @@ with this program.  If not, write to the Free Software Foundation, Inc.,
 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 .\"}}}
 .SH "SEE ALSO" \"{{{
-.IR cpmcp (1),
+.IR cpmls (1),
 .IR cpm (5)
 .\"}}}

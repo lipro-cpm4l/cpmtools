@@ -34,6 +34,10 @@ USA.  */
 #include "config.h"
 #endif
 
+#ifdef USE_DMALLOC
+#include <dmalloc.h>
+#endif
+
 #if !defined (__STDC__) || !__STDC__
 /* This is a separate conditional since some stdc systems
    reject `defined (const)'.  */

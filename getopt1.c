@@ -23,6 +23,10 @@ USA.  */
 #include "config.h"
 #endif
 
+#ifdef USE_DMALLOC
+#include <dmalloc.h>
+#endif
+
 #include "getopt.h"
 
 #if !defined (__STDC__) || !__STDC__
