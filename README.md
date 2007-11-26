@@ -85,7 +85,7 @@ This is an unofficial fork!
 
 Original written by Michael Haardt <michael@moria.de> and John Elliott
 <seasip.webmaster@gmail.com> and distributed at first under the GNU General
-Public License version 2 (this version) and later version 3.
+Public License version 2 (original) and now version 3.
 
 *Primary-site*: http://www.moria.de/~michael/cpmtools/
 
@@ -106,7 +106,7 @@ therefore only at your own risk! **No warranty or liability!**
 **Michael Haardt is the originator of the C source code and**
 as well as the associated scripts, descriptions and help files.
 This part is released and distributed under the GNU General
-Public License (GNU-GPL) Version 2.
+Public License (GNU-GPL) Version 3.
 
 **A few parts of the source code are based on the work of other
 authors:**
