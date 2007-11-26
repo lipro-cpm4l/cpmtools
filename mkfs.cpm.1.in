@@ -38,13 +38,13 @@ Any errors are indicated by exit code 1.
 @DATADIR@/diskdefs	CP/M disk format definitions
 .\"}}}
 .SH AUTHORS \"{{{
-This program is copyright 1997\(en2006 Michael Haardt
+This program is copyright 1997\(en2007 Michael Haardt
 <michael@moria.de>.  The Windows port is copyright 2000, 2001 John Elliott
 <jce@seasip.demon.co.uk>.
 .PP
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or
+the Free Software Foundation; either version 3 of the License, or
 (at your option) any later version.
 .PP
 This program is distributed in the hope that it will be useful,

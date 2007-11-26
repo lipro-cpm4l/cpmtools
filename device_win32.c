@@ -1,15 +1,16 @@
 /* #includes */ /*{{{C}}}*//*{{{*/
-#undef  _POSIX_SOURCE
-#define _POSIX_SOURCE   1
-#undef  _POSIX_C_SOURCE
-#define _POSIX_C_SOURCE 2
+#include "config.h"
 
 #include <assert.h>
 #include <errno.h>
 #include <ctype.h>
-#include "config.h"
+
 #include "cpmdir.h"
 #include "cpmfs.h"
+
+#ifdef USE_DMALLOC
+#include <dmalloc.h>
+#endif
 /*}}}*/
 /* types */ /*{{{*/
 #define PHYSICAL_SECTOR_1       1 /* First physical sector */

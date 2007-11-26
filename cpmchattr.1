@@ -1,37 +1,50 @@
-.TH CPMLS 1 "@UPDATED@" "CP/M tools" "User commands"
+.TH CPMCHATTR 1 "November 26, 2007" "CP/M tools" "User commands"
 .SH NAME \"{{{roff}}}\"{{{
-cpmls \- list sorted contents of directory
+cpmchattr \- change file attributes on CP/M files
 .\"}}}
 .SH SYNOPSIS \"{{{
 .ad l
-.B cpmls
-.RB [ \-d | \-D | \-F | \-A | \-l [ \-c ][ \-i ]]
+.B cpmchattr
 .RB [ \-f
 .IR format ]
 .I image
-.RI [ file-pattern "...]"
+.I attrib
+.I file-pattern
+\&...
 .ad b
 .\"}}}
 .SH DESCRIPTION \"{{{
-\fBCpmls\fP lists the sorted contents of the directory.
+\fBCpmchattr\fP changes the file attributes for files on CP/M disks.
 .\"}}}
 .SH OPTIONS \"{{{
 .IP "\fB\-f\fP \fIformat\fP"
 Use the given CP/M disk \fIformat\fP instead of the default format.
-.IP \fB\-d\fP
-Old CP/M 2.2 dir output.
-.IP \fB\-D\fP
-P2DOS 2.3 ddir-like output.
-.IP \fB\-F\fp
-CP/M 3.x dir output.
-.IP \fB\-A\fp
-E2fs lsattr-like output.
-.IP \fB\-l\fP
-Long UNIX-style directory listing including size, time stamp and user number.
-.IP \fB\-c\fP
-Output the creation time, not the modification time.
-.IP \fB\-i\fP
-Print index number of each file.
+.IP "\fIattrib\fP"
+Set the file attributes as given.
+.\"}}}
+.SH "FILE ATTRIBUTES" \"{{{
+The file attribute string can contain the characters
+1,2,3,4,s,a,N and M.
+The meanings of these are:
+.TP
+.B 1-4
+The CP/M "user attributes" F1-F4.  CP/M does not assign any
+meaning to these attributes, though MP/M does.
+.TP
+.B s
+The file is a system file.  This attribute can also be set by
+.I cpmchmod(1).
+.TP
+.B a
+The file has been backed up.
+.TP
+.B N
+Reset all attributes to zero.  So the string "N1r" resets all attributes and
+then sets F1 and Read-Only.
+.TP
+.B M
+Attributes after an M are unset rather than set.  The string "12M34" sets
+atttributes F1 and F2, and unsets F3 and F4.
 .\"}}}
 .SH "RETURN VALUE" \"{{{
 Upon successful completion, exit code 0 is returned.
@@ -40,11 +53,11 @@ Upon successful completion, exit code 0 is returned.
 Any errors are indicated by exit code 1.
 .\"}}}
 .SH FILES \"{{{
-@DATADIR@/diskdefs	CP/M disk format definitions
+${prefix}/share/diskdefs	CP/M disk format definitions
 .\"}}}
 .SH AUTHORS \"{{{
 This program is copyright 1997\(en2007 Michael Haardt
-<michael@moria.de>.  The Windows port is copyright 2000, 2001 John Elliott
+<michael@moria.de> and copyright 2000, 2001 John Elliott
 <jce@seasip.demon.co.uk>.
 .PP
 This program is free software; you can redistribute it and/or modify
@@ -62,6 +75,7 @@ with this program.  If not, write to the Free Software Foundation, Inc.,
 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 .\"}}}
 .SH "SEE ALSO" \"{{{
-.IR cpmcp (1),
+.IR cpmls (1),
+.IR cpmchmod (1),
 .IR cpm (5)
 .\"}}}

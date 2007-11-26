@@ -1,16 +1,18 @@
 /* #includes */ /*{{{C}}}*//*{{{*/
+#include "config.h"
+
 #include <ctype.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "config.h"
 
-extern char *optarg;
-extern int optind,opterr,optopt;
-int getopt(int argc, char * const *argv, const char *optstring);
-
+#include "getopt.h"
 #include "cpmfs.h"
+
+#ifdef USE_DMALLOC
+#include <dmalloc.h>
+#endif
 /*}}}*/
 /* #defines */ /*{{{*/
 #ifndef O_BINARY

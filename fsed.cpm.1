@@ -1,46 +1,33 @@
-.TH CPMLS 1 "@UPDATED@" "CP/M tools" "User commands"
-.SH NAME \"{{{roff}}}\"{{{
-cpmls \- list sorted contents of directory
+.TH FSED.CPM 1 "November 26, 2007" "CP/M tools" "User commands"
+.SH NAME ..\"{{{roff}}}\"{{{
+fsed.cpm \- edit a CP/M file system
 .\"}}}
-.SH SYNOPSIS \"{{{
+.SH SYNOPSIS .\"{{{
 .ad l
-.B cpmls
-.RB [ \-d | \-D | \-F | \-A | \-l [ \-c ][ \-i ]]
+.B fsed.cpm
 .RB [ \-f
 .IR format ]
 .I image
-.RI [ file-pattern "...]"
 .ad b
 .\"}}}
-.SH DESCRIPTION \"{{{
-\fBCpmls\fP lists the sorted contents of the directory.
+.SH DESCRIPTION .\"{{{
+\fBfsed.cpm\fP edits a CP/M file system on an image file or device.
+It knows about the system, directory and data area, using sector skew on
+the last two.  Directory entries are decoded.  The interactive usage is
+self-explanatory.
 .\"}}}
-.SH OPTIONS \"{{{
+.SH OPTIONS .\"{{{
 .IP "\fB\-f\fP \fIformat\fP"
 Use the given CP/M disk \fIformat\fP instead of the default format.
-.IP \fB\-d\fP
-Old CP/M 2.2 dir output.
-.IP \fB\-D\fP
-P2DOS 2.3 ddir-like output.
-.IP \fB\-F\fp
-CP/M 3.x dir output.
-.IP \fB\-A\fp
-E2fs lsattr-like output.
-.IP \fB\-l\fP
-Long UNIX-style directory listing including size, time stamp and user number.
-.IP \fB\-c\fP
-Output the creation time, not the modification time.
-.IP \fB\-i\fP
-Print index number of each file.
 .\"}}}
-.SH "RETURN VALUE" \"{{{
+.SH "RETURN VALUE" .\"{{{
 Upon successful completion, exit code 0 is returned.
 .\"}}}
-.SH ERRORS \"{{{
+.SH ERRORS .\"{{{
 Any errors are indicated by exit code 1.
 .\"}}}
-.SH FILES \"{{{
-@DATADIR@/diskdefs	CP/M disk format definitions
+.SH FILES .\"{{{
+${prefix}/share/diskdefs	CP/M disk format definitions
 .\"}}}
 .SH AUTHORS \"{{{
 This program is copyright 1997\(en2007 Michael Haardt
@@ -61,7 +48,9 @@ You should have received a copy of the GNU General Public License along
 with this program.  If not, write to the Free Software Foundation, Inc.,
 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 .\"}}}
-.SH "SEE ALSO" \"{{{
-.IR cpmcp (1),
+.SH "SEE ALSO" .\"{{{
+.IR fsck.cpm (1),
+.IR mkfs.cpm (1),
+.IR cpmls (1),
 .IR cpm (5)
 .\"}}}

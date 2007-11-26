@@ -1,12 +1,18 @@
 /* #includes */ /*{{{C}}}*//*{{{*/
+#include "config.h"
+
 #include <ctype.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "config.h"
+
 #include "getopt.h"
 #include "cpmfs.h"
+
+#ifdef USE_DMALLOC
+#include <dmalloc.h>
+#endif
 /*}}}*/
 
 /* variables */ /*{{{*/
