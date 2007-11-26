@@ -1,18 +1,20 @@
 /* #includes */ /*{{{C}}}*//*{{{*/
+#include "config.h"
+
 #include <assert.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
-#include "config.h"
 
-extern char *optarg;
-extern int optind,opterr,optopt;
-int getopt(int argc, char * const *argv, const char *optstring);
-
+#include "getopt.h"
 #include "cpmdir.h"
 #include "cpmfs.h"
+
+#ifdef USE_DMALLOC
+#include <dmalloc.h>
+#endif
 /*}}}*/
 /* #defines */ /*{{{*/
 /* your favourite password *:-) */

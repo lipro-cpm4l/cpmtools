@@ -1,20 +1,16 @@
 /* #includes */ /*{{{C}}}*//*{{{*/
-#undef  _POSIX_SOURCE
-#define _POSIX_SOURCE   1
-#undef  _POSIX_C_SOURCE
-#define _POSIX_C_SOURCE 2
-
-#ifdef DMALLOC
-#include "dmalloc.h"
-#endif
+#include "config.h"
 
 #include <assert.h>
 #include <errno.h>
-#include "config.h"
 #include <stdlib.h>
 #include <string.h>
 
 #include "device.h"
+
+#ifdef USE_DMALLOC
+#include <dmalloc.h>
+#endif
 /*}}}*/
 
 /* Device_open           -- Open an image file                      */ /*{{{*/

@@ -1,12 +1,5 @@
 /* #includes */ /*{{{C}}}*//*{{{*/
-#undef  _POSIX_SOURCE
-#define _POSIX_SOURCE   1
-#undef  _POSIX_C_SOURCE
-#define _POSIX_C_SOURCE 2
-
-#ifdef DMALLOC
-#include "dmalloc.h"
-#endif
+#include "config.h"
 
 #include <sys/stat.h>
 #include <assert.h>
@@ -16,9 +9,13 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
-#include "config.h"
+
 #include "cpmdir.h"
 #include "cpmfs.h"
+
+#ifdef USE_DMALLOC
+#include <dmalloc.h>
+#endif
 /*}}}*/
 /* #defines */ /*{{{*/
 #undef CPMFS_DEBUG
@@ -510,23 +507,23 @@ static int recmatch(const char *a, const char *pattern)
 
   while (*pattern)
   {
-   switch (*pattern)
-  {
-    case '*':
+    switch (*pattern)
     {
-      if (*a=='.' && first) return 1;
-      ++pattern;
-      while (*a) if (recmatch(a,pattern)) return 1; else ++a;
-      break;
+      case '*':
+      {
+        if (*a=='.' && first) return 1;
+        ++pattern;
+        while (*a) if (recmatch(a,pattern)) return 1; else ++a;
+        break;
+      }
+      case '?':
+      {
+        if (*a) { ++a; ++pattern; } else return 0;
+        break;
+      }
+      default: if (*a==*pattern) { ++a; ++pattern; } else return 0;
     }
-    case '?':
-    {
-      if (*a) { ++a; ++pattern; } else return 0;
-      break;
-    }
-    default: if (*a==*pattern) { ++a; ++pattern; } else return 0;
-  }
-  first=0;
+    first=0;
   }
   return (*pattern=='\0' && *a=='\0');
 }
@@ -558,24 +555,27 @@ void cpmglob(int optin, int argc, char * const argv[], struct cpmInode *root, in
   *gargc=0;
   cpmOpendir(root,&dir);
   entries=0;
-  dirent=realloc(dirent,sizeof(struct cpmDirent)*(dirsize=32));
-  while (cpmReaddir(&dir,dirent+entries))
+  dirsize=8;
+  dirent=malloc(sizeof(struct cpmDirent)*dirsize);
+  while (cpmReaddir(&dir,&dirent[entries]))
   {
     ++entries;
     if (entries==dirsize) dirent=realloc(dirent,sizeof(struct cpmDirent)*(dirsize*=2));
   }
+
   for (i=optin; i<argc; ++i)
   {
     for (j=0; j<entries; ++j)
     {
-     if (match(dirent[j].name,argv[i]))
-    {
-      if (*gargc==gargcap) *gargv=realloc(*gargv,sizeof(char*)*(gargcap ? (gargcap*=2) : (gargcap=16)));
-      (*gargv)[*gargc]=strcpy(malloc(strlen(dirent[j].name)+1),dirent[j].name);
-      ++*gargc;
-    }
+      if (match(dirent[j].name,argv[i]))
+      {
+        if (*gargc==gargcap) *gargv=realloc(*gargv,sizeof(char*)*(gargcap ? (gargcap*=2) : (gargcap=16)));
+        (*gargv)[*gargc]=strcpy(malloc(strlen(dirent[j].name)+1),dirent[j].name);
+        ++*gargc;
+      }
     }
   }
+  free(dirent);
 }
 /*}}}*/
 
@@ -1048,7 +1048,7 @@ int cpmReaddir(struct cpmFile *dir, struct cpmDirent *ent)
 {
   /* variables */ /*{{{*/
   struct PhysDirectoryEntry *cur=(struct PhysDirectoryEntry*)0;
-  char buf[13];
+  char buf[2+8+1+3+1]; /* 00foobarxy.zzy\0 */
   int i;
   char *bufp;
   int hasext;

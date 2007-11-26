@@ -247,3 +247,14 @@ diskdef p112-old
   boottrk 1
   os 3
 end
+
+diskdef kpii
+  seclen 512
+  tracks 40
+  sectrk 10
+  blocksize 1024
+  maxdir 32
+  skew 0
+  boottrk 1
+  os 2.2
+end

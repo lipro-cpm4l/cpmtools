@@ -1,5 +1,4 @@
-Changes since 2.5:
+Changes since 2.6:
 
-o  changed diskdefs entry for P112
-o  cpmls now shows all user areas, not just 0-9 as before
-o  various display bugs in fsed.cpm fixed
+o  off by one bug in cpmfs.c fixed
+o  GPL 3

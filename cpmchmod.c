@@ -1,13 +1,18 @@
 /* #includes */ /*{{{C}}}*//*{{{*/
+#include "config.h"
+
 #include <ctype.h>
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "config.h"
 
 #include "getopt.h"
 #include "cpmfs.h"
+
+#ifdef USE_DMALLOC
+#include <dmalloc.h>
+#endif
 /*}}}*/
 
 const char cmd[]="cpmchmod";

@@ -1,12 +1,5 @@
 /* #includes */ /*{{{C}}}*//*{{{*/
-#undef  _POSIX_SOURCE
-#define _POSIX_SOURCE   1
-#undef  _POSIX_C_SOURCE
-#define _POSIX_C_SOURCE 2
-
-#ifdef DMALLOC
-#include "dmalloc.h"
-#endif
+#include "config.h"
 
 #include <sys/stat.h>
 #include <ctype.h>
@@ -16,10 +9,13 @@
 #include <fcntl.h>
 #include <limits.h>
 #include <stdlib.h>
-#include "config.h"
 
 #include "getopt.h"
 #include "cpmfs.h"
+
+#ifdef USE_DMALLOC
+#include <dmalloc.h>
+#endif
 /*}}}*/
 
 const char cmd[]="cpmcp";

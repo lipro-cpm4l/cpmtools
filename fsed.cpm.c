@@ -10,6 +10,10 @@
 #include <string.h>
 
 #include "cpmfs.h"
+
+#ifdef USE_DMALLOC
+#include <dmalloc.h>
+#endif
 /*}}}*/
 
 extern char **environ;
