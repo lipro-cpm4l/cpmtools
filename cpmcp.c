@@ -2,6 +2,7 @@
 #include "config.h"
 
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <ctype.h>
 #include <errno.h>
 #include <stdio.h>
@@ -9,8 +10,9 @@
 #include <fcntl.h>
 #include <limits.h>
 #include <stdlib.h>
+#include <utime.h>
 
-#include "getopt.h"
+#include "getopt_.h"
 #include "cpmfs.h"
 
 #ifdef USE_DMALLOC
@@ -20,6 +22,7 @@
 
 const char cmd[]="cpmcp";
 static int text=0;
+static int preserve=0;
 
 /**
  * Return the user number.
@@ -46,64 +49,72 @@ static int cpmToUnix(const struct cpmInode *root, const char *src, const char *d
   struct cpmInode ino;
   int exitcode=0;
 
-      if (cpmNamei(root,src,&ino)==-1) { fprintf(stderr,"%s: can not open %s: %s\n",cmd,src,boo); exitcode=1; }
-      else
+  if (cpmNamei(root,src,&ino)==-1) { fprintf(stderr,"%s: can not open `%s': %s\n",cmd,src,boo); exitcode=1; }
+  else
+  {
+    struct cpmFile file;
+    FILE *ufp;
+
+    cpmOpen(&ino,&file,O_RDONLY);
+    if ((ufp=fopen(dest,text ? "w" : "wb"))==(FILE*)0) { fprintf(stderr,"%s: can not create %s: %s\n",cmd,dest,strerror(errno)); exitcode=1; }
+    else
+    {
+      int crpending=0;
+      int ohno=0;
+      int res;
+      char buf[4096];
+
+      while ((res=cpmRead(&file,buf,sizeof(buf)))!=0)
       {
-        struct cpmFile file;
-        FILE *ufp;
+        int j;
 
-        cpmOpen(&ino,&file,O_RDONLY);
-        if ((ufp=fopen(dest,text ? "w" : "wb"))==(FILE*)0) { fprintf(stderr,"%s: can not create %s: %s\n",cmd,dest,strerror(errno)); exitcode=1; }
-        else
+        for (j=0; j<res; ++j)
         {
-          int crpending=0;
-          int ohno=0;
-          int res;
-          char buf[4096];
-
-          while ((res=cpmRead(&file,buf,sizeof(buf)))!=0)
+          if (text)
           {
-            int j;
-
-            for (j=0; j<res; ++j)
+            if (buf[j]=='\032') goto endwhile;
+            if (crpending)
             {
-              if (text)
+              if (buf[j]=='\n') 
               {
-                if (buf[j]=='\032') goto endwhile;
-                if (crpending)
-                {
-                  if (buf[j]=='\n') 
-                  {
-                    if (putc('\n',ufp)==EOF) { fprintf(stderr,"%s: can not write %s: %s\n",cmd,dest,strerror(errno)); exitcode=1; ohno=1; goto endwhile; }
-                    crpending=0;
-                  }
-                  else if (putc('\r',ufp)==EOF) { fprintf(stderr,"%s: can not write %s: %s\n",cmd,dest,strerror(errno)); exitcode=1; ohno=1; goto endwhile; }
-                  crpending=(buf[j]=='\r');
-                }
-                else
-                {
-                  if (buf[j]=='\r') crpending=1;
-                  else if (putc(buf[j],ufp)==EOF) { fprintf(stderr,"%s: can not write %s: %s\n",cmd,dest,strerror(errno)); exitcode=1; ohno=1; goto endwhile; }
-                }
+                if (putc('\n',ufp)==EOF) { fprintf(stderr,"%s: can not write %s: %s\n",cmd,dest,strerror(errno)); exitcode=1; ohno=1; goto endwhile; }
+                crpending=0;
               }
+              else if (putc('\r',ufp)==EOF) { fprintf(stderr,"%s: can not write %s: %s\n",cmd,dest,strerror(errno)); exitcode=1; ohno=1; goto endwhile; }
+              crpending=(buf[j]=='\r');
+            }
+            else
+            {
+              if (buf[j]=='\r') crpending=1;
               else if (putc(buf[j],ufp)==EOF) { fprintf(stderr,"%s: can not write %s: %s\n",cmd,dest,strerror(errno)); exitcode=1; ohno=1; goto endwhile; }
             }
           }
-          endwhile:
-          if (fclose(ufp)==EOF && !ohno) { fprintf(stderr,"%s: can not close %s: %s\n",cmd,dest,strerror(errno)); exitcode=1; }
+          else if (putc(buf[j],ufp)==EOF) { fprintf(stderr,"%s: can not write %s: %s\n",cmd,dest,strerror(errno)); exitcode=1; ohno=1; goto endwhile; }
         }
-        cpmClose(&file);
       }
-      return exitcode;
+      endwhile:
+      if (fclose(ufp)==EOF && !ohno) { fprintf(stderr,"%s: can not close %s: %s\n",cmd,dest,strerror(errno)); exitcode=1; ohno=1; }
+      if (preserve && !ohno && (ino.atime || ino.mtime))
+      {
+        struct utimbuf ut;
+
+        if (ino.atime) ut.actime=ino.atime; else time(&ut.actime);
+        if (ino.mtime) ut.modtime=ino.mtime; else time(&ut.modtime);
+        if (utime(dest,&ut)==-1) { fprintf(stderr,"%s: can change timestamps of %s: %s\n",cmd,dest,strerror(errno)); exitcode=1; ohno=1; }
+      }
+    }
+    cpmClose(&file);
+  }
+  return exitcode;
 }
 /*}}}*/
 
 static void usage(void) /*{{{*/
 {
-  fprintf(stderr,"Usage: %s [-f format] [-t] image 0:file file\n",cmd);
-  fprintf(stderr,"       %s [-f format] [-t] image 0:file ... directory\n",cmd);
-  fprintf(stderr,"       %s [-f format] [-t] image file 0:file\n",cmd);
-  fprintf(stderr,"       %s [-f format] [-t] image file ... 0:\n",cmd);
+  fprintf(stderr,"Usage: %s [-f format] [-p] [-t] image user:file file\n",cmd);
+  fprintf(stderr,"       %s [-f format] [-p] [-t] image user:file ... directory\n",cmd);
+  fprintf(stderr,"       %s [-f format] [-p] [-t] image file user:file\n",cmd);
+  fprintf(stderr,"       %s [-f format] [-p] [-t] image file ... user:\n",cmd);
   exit(1);
 }
 /*}}}*/
@@ -119,29 +130,32 @@ int main(int argc, char *argv[])
   struct cpmInode root;
   struct cpmSuperBlock super;
   int exitcode=0;
+  int gargc;
+  char **gargv;
   /*}}}*/
 
   /* parse options */ /*{{{*/
-  while ((c=getopt(argc,argv,"T:f:h?t"))!=EOF) switch(c)
+  while ((c=getopt(argc,argv,"T:f:h?pt"))!=EOF) switch(c)
   {
     case 'T': devopts=optarg; break;
     case 'f': format=optarg; break;
     case 'h':
     case '?': usage(); break;
+    case 'p': preserve=1; break;
     case 't': text=1; break;
   }
   /*}}}*/
   /* parse arguments */ /*{{{*/
   if ((optind+2)>=argc) usage();
-  image=argv[optind];
+  image=argv[optind++];
 
-  if (userNumber(argv[optind+1])>=0) /* cpm -> unix? */ /*{{{*/
+  if (userNumber(argv[optind])>=0) /* cpm -> unix? */ /*{{{*/
   {
     int i;
     struct stat statbuf;
 
-    for (i=optind+1; i<(argc-1); ++i) if (userNumber(argv[i])==-1) usage();
-    todir=((argc-optind-1)>2);
+    for (i=optind; i<(argc-1); ++i) if (userNumber(argv[i])==-1) usage();
+    todir=((argc-optind)>2);
     if (stat(argv[argc-1],&statbuf)==-1) { if (todir) usage(); }
     else if (S_ISDIR(statbuf.st_mode)) todir=1; else if (todir) usage();
     readcpm=1;
@@ -152,8 +166,8 @@ int main(int argc, char *argv[])
     int i;
 
     todir=0;
-    for (i=optind+1; i<(argc-1); ++i) if (userNumber(argv[i])>=0) usage();
-    if ((argc-optind-1)>2 && *(strchr(argv[argc-1],':')+1)!='\0') usage();
+    for (i=optind; i<(argc-1); ++i) if (userNumber(argv[i])>=0) usage();
+    if ((argc-optind)>2 && *(strchr(argv[argc-1],':')+1)!='\0') usage();
     if (*(strchr(argv[argc-1],':')+1)=='\0') todir=1;
     readcpm=0;
   }
@@ -170,57 +184,24 @@ int main(int argc, char *argv[])
   /*}}}*/
   if (readcpm) /* copy from CP/M to UNIX */ /*{{{*/
   {
-    int i,count,total=0;
-    char src[2+8+1+3+1];
-    struct cpmFile dir;
-    struct cpmDirent dirent;
-
-    /* expand pattern and check if we try to copy multiple files to a file */ /*{{{*/
-    for (i=optind+1,total=0; i<(argc-1); ++i)
-    {
-      cpmOpendir(&root,&dir);
-      count=0;
-      while (cpmReaddir(&dir,&dirent)) if (match(dirent.name,argv[i])) ++count;
-      if (count==0) ++total; else total+=count;
-      cpmClose(&dir);
-    }
-    if (total>1 && !todir) usage();
-    /*}}}*/
-
-    for (i=optind+1; i<(argc-1); ++i)
+    int i;
+    char *last=argv[argc-1];
+    
+    cpmglob(optind,argc-1,argv,&root,&gargc,&gargv);
+    /* trying to copy multiple files to a file? */
+    if (gargc>1 && !todir) usage();
+    for (i=0; i<gargc; ++i)
     {
       char dest[_POSIX_PATH_MAX];
 
-      count=0;
-      cpmOpendir(&root,&dir);
-      while (cpmReaddir(&dir,&dirent))
+      if (todir)
       {
-        if (match(dirent.name,argv[i]))
-        {
-          if (todir)
-          {
-            strcpy(dest,argv[argc-1]);
-            strcat(dest,"/");
-            strcat(dest,dirent.name+2);
-          }
-          else strcpy(dest,argv[argc-1]);
-          if (cpmToUnix(&root,dirent.name,dest)) exitcode=1;
-          ++count;
-        }
+        strcpy(dest,last);
+        strcat(dest,"/");
+        strcat(dest,gargv[i]+2);
       }
-      cpmClose(&dir);
-      if (count==0) /* try the pattern itself and find it does not work :) */ /*{{{*/
-      {
-        if (todir)
-        {
-          strcpy(dest,argv[argc-1]);
-          strcat(dest,"/");
-          strcat(dest,src+2);
-        }
-        else strcpy(dest,argv[argc-1]);
-        if (cpmToUnix(&root,src,dest)) exitcode=1;
-      }
-      /*}}}*/
+      else strcpy(dest,last);
+      if (cpmToUnix(&root,gargv[i],dest)) exitcode=1;
     }
   }
   /*}}}*/
@@ -228,7 +209,7 @@ int main(int argc, char *argv[])
   {
     int i;
 
-    for (i=optind+1; i<(argc-1); ++i)
+    for (i=optind; i<(argc-1); ++i)
     {
       /* variables */ /*{{{*/
       char *dest=(char*)0;
