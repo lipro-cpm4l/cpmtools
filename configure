@@ -1820,8 +1820,8 @@ IFS=$ac_save_IFS
 case $host_os in *\ *) host_os=`echo "$host_os" | sed 's/ /-/g'`;; esac
 
 
-VERSION=2.7
-UPDATED='November 26, 2007'
+VERSION=2.8
+UPDATED='June 16, 2008'
 
 DEVICE="posix"
 
@@ -3186,14 +3186,17 @@ case $host_os in
 esac
 
 DEVICE="posix"
+DISKDEFS='${datarootdir}/diskdefs'
 
 if test "$CYGWIN" = "yes"
 then
   DEVICE="win32"
+  DISKDEFS='%USERPROFILE%\\diskdefs'
 fi
 if test "$MINGW32" = "yes"
 then
   DEVICE="win32"
+  DISKDEFS='%USERPROFILE%\\diskdefs'
 fi
 
 

@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "getopt.h"
+#include "getopt_.h"
 #include "cpmfs.h"
 
 #ifdef USE_DMALLOC
@@ -114,9 +114,9 @@ static void oldddir(char **dirent, int entries, struct cpmInode *ino)
           putchar(' ');
           if (statbuf.mtime)
           {
-            tmp=gmtime(&statbuf.mtime);
+            tmp=localtime(&statbuf.mtime);
             printf("  %02d-%s-%04d %02d:%02d",tmp->tm_mday,month[tmp->tm_mon],tmp->tm_year+1900,tmp->tm_hour,tmp->tm_min);
-            tmp=gmtime(&statbuf.ctime);
+            tmp=localtime(&statbuf.ctime);
             printf("  %02d-%s-%04d %02d:%02d",tmp->tm_mday,month[tmp->tm_mon],tmp->tm_year+1900,tmp->tm_hour,tmp->tm_min);
           }
           putchar('\n');
@@ -189,9 +189,9 @@ static void old3dir(char **dirent, int entries, struct cpmInode *ino)
           else if (attrib & CPM_ATTR_PWWRITE) printf("Write  ");
           else if (attrib & CPM_ATTR_PWDEL)   printf("Delete "); 
           else printf("None   ");
-          tmp=gmtime(&statbuf.mtime);
+          tmp=localtime(&statbuf.mtime);
           printf("%02d/%02d/%02d %02d:%02d  ",tmp->tm_mon+1,tmp->tm_mday,tmp->tm_year%100,tmp->tm_hour,tmp->tm_min);
-          tmp=gmtime(&statbuf.ctime);
+          tmp=localtime(&statbuf.ctime);
           printf("%02d/%02d/%02d %02d:%02d",tmp->tm_mon+1,tmp->tm_mday,tmp->tm_year%100,tmp->tm_hour,tmp->tm_min);
           putchar('\n');
           ++l;
@@ -260,7 +260,7 @@ static void ls(char **dirent, int entries, struct cpmInode *ino, int l, int c, i
           printf(" %-2d ",dir[i].user);
 #endif
           printf("%8.1ld ",(long)statbuf.size);
-          tmp=gmtime(c ? &statbuf.ctime : &statbuf.mtime);
+          tmp=localtime(c ? &statbuf.ctime : &statbuf.mtime);
           printf("%s %02d ",month[tmp->tm_mon],tmp->tm_mday);
           if ((c ? statbuf.ctime : statbuf.mtime)<(now-182*24*3600)) printf("%04d  ",tmp->tm_year+1900);
           else printf("%02d:%02d ",tmp->tm_hour,tmp->tm_min);

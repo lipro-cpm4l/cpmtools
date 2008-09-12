@@ -258,3 +258,15 @@ diskdef kpii
   boottrk 1
   os 2.2
 end
+
+# setfdprm /dev/fd0 dd sect=10
+diskdef interak
+  seclen 512
+  tracks 80
+  sectrk 20
+  blocksize 4096
+  maxdir 256
+  skew 1
+  boottrk 2
+  os 2.2
+end

@@ -4,7 +4,7 @@ cpmrm \- remove files on CP/M disks
 .\"}}}
 .SH SYNOPSIS \"{{{
 .ad l
-.B cpmera
+.B cpmrm
 .RB [ \-f
 .IR format ]
 .I image
@@ -13,7 +13,7 @@ cpmrm \- remove files on CP/M disks
 .ad b
 .\"}}}
 .SH DESCRIPTION \"{{{
-\fBcpmera\fP removes files from CP/M disks.
+\fBcpmrm\fP removes files from CP/M disks.
 .\"}}}
 .SH OPTIONS \"{{{
 .IP "\fB\-f\fP \fIformat\fP"
@@ -29,7 +29,7 @@ Any errors are indicated by exit code 1.
 @DATADIR@/diskdefs	CP/M disk format definitions
 .\"}}}
 .SH AUTHORS \"{{{
-This program is copyright 1997\(en2007 Michael Haardt
+This program is copyright 1997\(en2008 Michael Haardt
 <michael@moria.de>.  The Windows port is copyright 2000, 2001 John Elliott
 <jce@seasip.demon.co.uk>.
 .PP

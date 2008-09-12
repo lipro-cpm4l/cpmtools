@@ -1,4 +1,7 @@
-Changes since 2.6:
+Changes since 2.7:
 
-o  off by one bug in cpmfs.c fixed
-o  GPL 3
+o  works on OS X
+o  use CP/M timestamps when copying files from CP/M
+o  Fixed various usage cases in cpmcp
+o  diskdefs for Interak computer system
+o  Different diskdefs location for Posix and Windows

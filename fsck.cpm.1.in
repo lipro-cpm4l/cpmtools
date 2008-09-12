@@ -49,7 +49,7 @@ The number of used blocks includes the blocks used for system tracks
 and the directory.
 .\"}}}
 .SH AUTHORS .\"{{{
-This program is copyright 1997\(en2007 Michael Haardt
+This program is copyright 1997\(en2008 Michael Haardt
 <michael@moria.de>.  The Windows port is copyright 2000, 2001 John Elliott
 <jce@seasip.demon.co.uk>.
 .PP

@@ -7,6 +7,7 @@ cpmcp \- copy files from and to CP/M disks
 .B cpmcp
 .RB [ \-f
 .IR format ]
+.RB [ \-p ]
 .RB [ \-t ]
 .I image
 \fIuser\fP\fB:\fP\fIfile\fP \fIfile\fP
@@ -14,6 +15,7 @@ cpmcp \- copy files from and to CP/M disks
 .B cpmcp
 .RB [ \-f
 .IR format ]
+.RB [ \-p ]
 .RB [ \-t ]
 .I image
 \fIuser\fP\fB:\fP\fIfile\fP ... \fIdirectory\fP
@@ -21,6 +23,7 @@ cpmcp \- copy files from and to CP/M disks
 .B cpmcp
 .RB [ \-f
 .IR format ]
+.RB [ \-p ]
 .RB [ \-t ]
 .I image
 \fIfile\fP \fIuser\fP\fB:\fP\fIfile\fP
@@ -28,6 +31,7 @@ cpmcp \- copy files from and to CP/M disks
 .B cpmcp
 .RB [ \-f
 .IR format ]
+.RB [ \-p ]
 .RB [ \-t ]
 .I image
 \fIfile\fP ... \fIuser\fP\fB:\fP
@@ -48,6 +52,9 @@ file name patterns.
 .SH OPTIONS \"{{{
 .IP "\fB\-f\fP \fIformat\fP"
 Use the given CP/M disk \fIformat\fP instead of the default format.
+.IP \fB\-p\fP
+Preserve time stamps when copying files from CP/M to UNIX (not
+implemented for copying the other way so far).
 .IP \fB\-t\fP
 Convert text files between CP/M and UNIX conventions.
 .\"}}}
@@ -61,7 +68,7 @@ Any errors are indicated by exit code 1.
 @DATADIR@/diskdefs	CP/M disk format definitions
 .\"}}}
 .SH AUTHORS \"{{{
-This program is copyright 1997\(en2007 Michael Haardt
+This program is copyright 1997\(en2008 Michael Haardt
 <michael@moria.de>.  The Windows port is copyright 2000, 2001 John Elliott
 <jce@seasip.demon.co.uk>.
 .PP
