@@ -14,13 +14,14 @@ CC=		@CC@
 CFLAGS=		@CFLAGS@
 LDFLAGS=        @LDFLAGS@
 DEFFORMAT=      @DEFFORMAT@
+DISKDEFS=	@DISKDEFS@
 DEVICE=         @DEVICE@
 FSED_CPM=       @FSED_CPM@
 EXEEXT =        @EXEEXT@
 OBJEXT =        .@OBJEXT@
 LIBS=           @LIBS@ @LDLIBS@
 LDDEPS=		@LDDEPS@
-CPPFLAGS=	@CPPFLAGS@ -DDISKDEFS=\"@datarootdir@/diskdefs\" -DFORMAT=\"$(DEFFORMAT)\"
+CPPFLAGS=	@CPPFLAGS@ -DDISKDEFS=\"$(DISKDEFS)\" -DFORMAT=\"$(DEFFORMAT)\"
 #
 # I'm only a novice and I haven't worked out how to autoconf this one
 #

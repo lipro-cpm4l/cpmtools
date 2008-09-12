@@ -56,7 +56,7 @@ Any errors are indicated by exit code 1.
 @DATADIR@/diskdefs	CP/M disk format definitions
 .\"}}}
 .SH AUTHORS \"{{{
-This program is copyright 1997\(en2007 Michael Haardt
+This program is copyright 1997\(en2008 Michael Haardt
 <michael@moria.de> and copyright 2000, 2001 John Elliott
 <jce@seasip.demon.co.uk>.
 .PP

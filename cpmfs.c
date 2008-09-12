@@ -119,6 +119,81 @@ static int isMatching(int user1, const char *name1, const char *ext1, int user2,
 }
 /*}}}*/
 
+/* time conversions */
+/* cpm2unix_time      -- convert CP/M time to UTC                */ /*{{{*/
+static time_t cpm2unix_time(int days, int hour, int min)
+{
+  /* CP/M stores timestamps in local time.  We don't know which     */
+  /* timezone was used and if DST was in effect.  Assuming it was   */
+  /* the current offset from UTC is most sensible, but not perfect. */
+
+  int year,days_per_year;
+  static int days_per_month[]={31,0,31,30,31,30,31,31,30,31,30,31};
+  char **old_environ;
+  static char gmt0[]="TZ=GMT0";
+  static char *gmt_env[]={ gmt0, (char*)0 };
+  struct tm tms;
+  time_t lt,t;
+
+  time(&lt);
+  t=lt;
+  tms=*localtime(&lt);
+  old_environ=environ;
+  environ=gmt_env;
+  lt=mktime(&tms);
+  lt-=t;
+  tms.tm_sec=0;
+  tms.tm_min=((min>>4)&0xf)*10+(min&0xf);
+  tms.tm_hour=((hour>>4)&0xf)*10+(hour&0xf);
+  tms.tm_mday=1;
+  tms.tm_mon=0;
+  tms.tm_year=78;
+  tms.tm_isdst=-1;
+  for (;;)
+  {
+    year=tms.tm_year+1900;
+    days_per_year=((year%4)==0 && ((year%100) || (year%400)==0)) ? 366 : 365;
+    if (days>days_per_year)
+    {
+      days-=days_per_year;
+      ++tms.tm_year;
+    }
+    else break;
+  }
+  for (;;)
+  {
+    days_per_month[1]=(days_per_year==366) ? 29 : 28;
+    if (days>days_per_month[tms.tm_mon])
+    {
+      days-=days_per_month[tms.tm_mon];
+      ++tms.tm_mon;
+    }
+    else break;
+  }
+  t=mktime(&tms)+(days-1)*24*3600;
+  environ=old_environ;
+  t-=lt;
+  return t;
+}
+/*}}}*/
+/* unix2cpm_time      -- convert UTC to CP/M time                */ /*{{{*/
+static void unix2cpm_time(time_t now, int *days, int *hour, int *min) 
+{
+  struct tm *tms;
+  int i;
+
+  tms=localtime(&now);
+  *min=((tms->tm_min/10)<<4)|(tms->tm_min%10);
+  *hour=((tms->tm_hour/10)<<4)|(tms->tm_hour%10);
+  for (i=1978,*days=0; i<1900+tms->tm_year; ++i)
+  {
+    *days+=365;
+    if (i%4==0 && (i%100!=0 || i%400==0)) ++*days;
+  }
+  *days += tms->tm_yday+1;
+}
+/*}}}*/
+
 /* allocation vector bitmap functions */
 /* alvInit            -- init allocation vector                  */ /*{{{*/
 static void alvInit(const struct cpmSuperBlock *d)
@@ -310,7 +385,6 @@ static int findFreeExtent(const struct cpmSuperBlock *drive)
 static void updateTimeStamps(const struct cpmInode *ino, int extent)
 {
   struct PhysDirectoryEntry *date;
-  struct tm *t;
   int i;
   int ca_min,ca_hour,ca_days,u_min,u_hour,u_days;
 
@@ -318,28 +392,8 @@ static void updateTimeStamps(const struct cpmInode *ino, int extent)
 #ifdef CPMFS_DEBUG
   fprintf(stderr,"CPMFS: updating time stamps for inode %d (%d)\n",extent,extent&3);
 #endif
-  /* compute ctime/atime */ /*{{{*/
-    t=localtime(ino->sb->cnotatime ? &ino->ctime : &ino->atime);
-    ca_min=((t->tm_min/10)<<4)|(t->tm_min%10);
-    ca_hour=((t->tm_hour/10)<<4)|(t->tm_hour%10);
-    for (i=1978,ca_days=0; i < 1900 + t->tm_year; ++i)
-    {
-      ca_days+=365;
-      if (i%4==0 && (i%100!=0 || i%400==0)) ++ca_days;
-    }
-    ca_days += t->tm_yday + 1;
-    /*}}}*/
-  /* compute mtime */ /*{{{*/
-    t=localtime(&ino->mtime);
-    u_min=((t->tm_min/10)<<4)|(t->tm_min%10);
-    u_hour=((t->tm_hour/10)<<4)|(t->tm_hour%10);
-    for (i=1978,u_days=0; i < 1900 + t->tm_year; ++i)
-    {
-      u_days+=365;
-      if (i%4==0 && (i%100!=0 || i%400==0)) ++u_days;
-    }
-    u_days += t->tm_yday + 1;
-    /*}}}*/
+  unix2cpm_time(ino->sb->cnotatime ? ino->ctime : ino->atime,&ca_days,&ca_hour,&ca_min);
+  unix2cpm_time(ino->mtime,&u_days,&u_hour,&u_min);
   if ((ino->sb->type==CPMFS_P2DOS || ino->sb->type==CPMFS_DR3) && (date=ino->sb->dir+(extent|3))->status==0x21)
   {
     switch (extent&3)
@@ -521,7 +575,7 @@ static int recmatch(const char *a, const char *pattern)
         if (*a) { ++a; ++pattern; } else return 0;
         break;
       }
-      default: if (*a==*pattern) { ++a; ++pattern; } else return 0;
+      default: if (tolower(*a)==tolower(*pattern)) { ++a; ++pattern; } else return 0;
     }
     first=0;
   }
@@ -562,17 +616,35 @@ void cpmglob(int optin, int argc, char * const argv[], struct cpmInode *root, in
     ++entries;
     if (entries==dirsize) dirent=realloc(dirent,sizeof(struct cpmDirent)*(dirsize*=2));
   }
-
   for (i=optin; i<argc; ++i)
   {
-    for (j=0; j<entries; ++j)
+    int found;
+
+    for (j=0,found=0; j<entries; ++j)
     {
       if (match(dirent[j].name,argv[i]))
       {
         if (*gargc==gargcap) *gargv=realloc(*gargv,sizeof(char*)*(gargcap ? (gargcap*=2) : (gargcap=16)));
         (*gargv)[*gargc]=strcpy(malloc(strlen(dirent[j].name)+1),dirent[j].name);
         ++*gargc;
+        ++found;
       }
+    }
+    if (found==0)
+    {
+      char pat[255];
+      char *pattern=argv[i];
+      int user;
+
+      if (isdigit(*pattern) && *(pattern+1)==':') { user=(*pattern-'0'); pattern+=2; }
+      else if (isdigit(*pattern) && isdigit(*(pattern+1)) && *(pattern+2)==':') { user=(10*(*pattern-'0')+(*(pattern+1)-'0')); pattern+=3; }
+      else user=-1;
+      if (user==-1) sprintf(pat,"??%s",pattern);
+      else sprintf(pat,"%02d%s",user,pattern);
+
+      if (*gargc==gargcap) *gargv=realloc(*gargv,sizeof(char*)*(gargcap ? (gargcap*=2) : (gargcap=16)));
+      (*gargv)[*gargc]=strcpy(malloc(strlen(pat)+1),pat);
+      ++*gargc;
     }
   }
   free(dirent);
@@ -736,9 +808,6 @@ int cpmNamei(const struct cpmInode *dir, const char *filename, struct cpmInode *
   int user;
   char name[8],extension[3];
   struct PhysDirectoryEntry *date;
-  char **old_environ;
-  static char gmt0[]="TZ=GMT0";
-  static char *gmt_env[]={ gmt0, (char*)0 };
   int highestExtno,highestExt=-1,lowestExtno,lowestExt=-1;
   int protectMode=0;
   /*}}}*/
@@ -826,19 +895,16 @@ int cpmNamei(const struct cpmInode *dir, const char *filename, struct cpmInode *
   i->ino=lowestExt;
   i->mode=s_ifreg;
   i->sb=dir->sb;
-  old_environ=environ;
-  environ=gmt_env; /* for mktime() */
+  /* set timestamps */ /*{{{*/
   if 
   (
     (dir->sb->type==CPMFS_P2DOS || dir->sb->type==CPMFS_DR3)
     && (date=dir->sb->dir+(lowestExt|3))->status==0x21
   )
-  /* set time stamps */ /*{{{*/
   {
     /* variables */ /*{{{*/
     int u_days=0,u_hour=0,u_min=0;
     int ca_days=0,ca_hour=0,ca_min=0;
-    struct tm tms;
     /*}}}*/
 
     switch (lowestExt&3)
@@ -880,32 +946,20 @@ int cpmNamei(const struct cpmInode *dir, const char *filename, struct cpmInode *
       }
       /*}}}*/
     }
-    /* compute CP/M to UNIX time format */ /*{{{*/
-    tms.tm_sec=0;
-    tms.tm_min=((ca_min>>4)&0xf)*10+(ca_min&0xf);
-    tms.tm_hour=((ca_hour>>4)&0xf)*10+(ca_hour&0xf);
-    tms.tm_mday=1;
-    tms.tm_mon=0;
-    tms.tm_year=78;
-    tms.tm_isdst=-1;
     if (i->sb->cnotatime)
     {
-      i->ctime=mktime(&tms)+(ca_days-1)*24*3600;
+      i->ctime=cpm2unix_time(ca_days,ca_hour,ca_min);
       i->atime=0;
     }
     else
     {
       i->ctime=0;
-      i->atime=mktime(&tms)+(ca_days-1)*24*3600;
+      i->atime=cpm2unix_time(ca_days,ca_hour,ca_min);
     }
-    tms.tm_min=((u_min>>4)&0xf)*10+(u_min&0xf);
-    tms.tm_hour=((u_hour>>4)&0xf)*10+(u_hour&0xf);
-    i->mtime=mktime(&tms)+(u_days-1)*24*3600;
-    /*}}}*/
+    i->mtime=cpm2unix_time(u_days,u_hour,u_min);
   }
-  /*}}}*/
   else i->atime=i->mtime=i->ctime=0;
-  environ=old_environ;
+  /*}}}*/
 
   /* Determine the inode attributes */
   i->attr = 0;

@@ -7,7 +7,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "getopt.h"
+#include "getopt_.h"
 #include "cpmfs.h"
 
 #ifdef USE_DMALLOC

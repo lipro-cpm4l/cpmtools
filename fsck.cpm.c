@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <errno.h>
 
-#include "getopt.h"
+#include "getopt_.h"
 #include "cpmdir.h"
 #include "cpmfs.h"
 
