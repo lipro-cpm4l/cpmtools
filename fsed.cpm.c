@@ -184,7 +184,7 @@ int main(int argc, char *argv[]) /*{{{*/
   }
 
   if (optind!=(argc-1)) usage=1;
-  else image=argv[optind];
+  else image=argv[optind++];
 
   if (usage)
   {

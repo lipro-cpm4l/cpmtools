@@ -1319,46 +1319,19 @@ int cpmRead(struct cpmFile *file, char *buf, int count)
 /* cpmWrite           -- write                                   */ /*{{{*/
 int cpmWrite(struct cpmFile *file, const char *buf, int count)
 {
-  int findext=1,findblock=1,extent=-1,extentno=-1,got=0,nextblockpos=-1,nextextpos=-1;
+  int findext=1,findblock=-1,extent=-1,extentno=-1,got=0,nextblockpos=-1,nextextpos=-1;
   int blocksize=file->ino->sb->blksiz;
   int extcap=(file->ino->sb->size<256 ? 16 : 8)*blocksize;
-  int block=-1,start=-1,end=-1,ptr=-1;
+  int block=-1,start=-1,end=-1,ptr=-1,last=-1;
   char buffer[16384];
 
   while (count>0)
   {
-    if (findext)
+    if (findext) /*{{{*/
     {
       extentno=file->pos/16384;
       extent=findFileExtent(file->ino->sb,file->ino->sb->dir[file->ino->ino].status,file->ino->sb->dir[file->ino->ino].name,file->ino->sb->dir[file->ino->ino].ext,0,extentno);
       nextextpos=(file->pos/extcap)*extcap+extcap;
-      findext=0;
-      findblock=1;
-      updateTimeStamps(file->ino,extent);
-    }
-    if (findblock)
-    {
-      if (start!=-1)
-      {
-        int last;
-    
-        last=writeBlock(file->ino->sb,block,buffer,start,end);
-        if (file->ino->sb->size<256) for (last=15; last>=ptr; --last)
-        {
-          if (file->ino->sb->dir[extent].pointers[last]) break;
-        }
-        else for (last=14; last>=ptr; last-=2)
-        {
-          if (file->ino->sb->dir[extent].pointers[last] || file->ino->sb->dir[extent].pointers[last+1]) break;
-        }
-        if (last==ptr) /* we wrote the last used block of this extent */
-        {
-          file->ino->sb->dir[extent].extnol=EXTENTL((file->pos-1)/16384);
-          file->ino->sb->dir[extent].extnoh=EXTENTH((file->pos-1)/16384);
-          file->ino->sb->dir[extent].blkcnt=((file->pos-1)%16384)/128+1;
-          file->ino->sb->dir[extent].lrc=file->pos%128;
-        }
-      }
       if (extent==-1)
       {
         if ((extent=findFreeExtent(file->ino->sb))==-1) return (got==0 ? -1 : got);
@@ -1368,12 +1341,19 @@ int cpmWrite(struct cpmFile *file, const char *buf, int count)
         file->ino->sb->dir[extent].extnoh=EXTENTH(extentno);
         file->ino->sb->dir[extent].blkcnt=0;
         file->ino->sb->dir[extent].lrc=0;
+        updateTimeStamps(file->ino,extent);
       }
+      findext=0;
+      findblock=1;
+    }
+    /*}}}*/
+    if (findblock) /*{{{*/
+    {
       ptr=(file->pos%extcap)/blocksize;
       if (file->ino->sb->size>=256) ptr*=2;
       block=(unsigned char)file->ino->sb->dir[extent].pointers[ptr];
       if (file->ino->sb->size>=256) block+=((unsigned char)file->ino->sb->dir[extent].pointers[ptr+1])<<8;
-      if (block==0)
+      if (block==0) /* allocate new block, set start/end to cover it */ /*{{{*/
       {
         if ((block=allocBlock(file->ino->sb))==-1) return (got==0 ? -1 : got);
         file->ino->sb->dir[extent].pointers[ptr]=block&0xff;
@@ -1382,45 +1362,55 @@ int cpmWrite(struct cpmFile *file, const char *buf, int count)
         end=(blocksize-1)/file->ino->sb->secLength;
         memset(buffer,0,blocksize);
       }
-      else
+      /*}}}*/
+      else /* read existing block and set start/end to cover modified parts */ /*{{{*/
       {
         start=(file->pos%blocksize)/file->ino->sb->secLength;
         end=((file->pos%blocksize+count)>blocksize ? blocksize-1 : (file->pos%blocksize+count-1))/file->ino->sb->secLength;
         if (file->pos%file->ino->sb->secLength) readBlock(file->ino->sb,block,buffer,start,start);
         if (end!=start && (file->pos+count-1)<blocksize) readBlock(file->ino->sb,block,buffer+end*file->ino->sb->secLength,end,end);
       }
+      /*}}}*/
       nextblockpos=(file->pos/blocksize)*blocksize+blocksize;
       findblock=0;
     }
-    buffer[file->pos%blocksize]=*buf++;
-    ++file->pos;
-    if (file->ino->size<file->pos) file->ino->size=file->pos;
-    ++got;
-    if (file->pos==nextblockpos) { if (file->pos==nextextpos) findext=1; else findblock=1; }
-    --count;
+    /*}}}*/
+    /* fill block and write it */ /*{{{*/
+    while (file->pos!=nextblockpos && count)
+    {
+      buffer[file->pos%blocksize]=*buf++;
+      ++file->pos;
+      if (file->ino->size<file->pos) file->ino->size=file->pos;
+      ++got;
+      --count;
+    }
+    (void)writeBlock(file->ino->sb,block,buffer,start,end);
+    if (file->ino->sb->size<256) for (last=15; last>=0; --last)
+    {
+      if (file->ino->sb->dir[extent].pointers[last])
+      {
+        break;
+      }
+    }
+    else for (last=14; last>0; last-=2)
+    {
+      if (file->ino->sb->dir[extent].pointers[last] || file->ino->sb->dir[extent].pointers[last+1])
+      {
+        last/=2;
+        break;
+      }
+    }
+    if (last>0) extentno+=(last*blocksize)/extcap;
+    file->ino->sb->dir[extent].extnol=EXTENTL(extentno);
+    file->ino->sb->dir[extent].extnoh=EXTENTH(extentno);
+    file->ino->sb->dir[extent].blkcnt=((file->pos-1)%16384)/128+1;
+    file->ino->sb->dir[extent].lrc=file->pos%128;
+    updateTimeStamps(file->ino,extent);
+    /*}}}*/
+    if (file->pos==nextextpos) findext=1;
+    else if (file->pos==nextblockpos) findblock=1;
   }
-  if (start!=-1)
-  {
-    int last;
-    
-    last=writeBlock(file->ino->sb,block,buffer,start,end);
-    if (file->ino->sb->size<256) for (last=15; last>=ptr; --last)
-    {
-      if (file->ino->sb->dir[extent].pointers[last]) break;
-    }
-    else for (last=14; last>=ptr; last-=2)
-    {
-      if (file->ino->sb->dir[extent].pointers[last] || file->ino->sb->dir[extent].pointers[last+1]) break;
-    }
-    if (last==ptr) /* we wrote the last used block of this extent */
-    {
-      file->ino->sb->dir[extent].extnol=EXTENTL((file->pos-1)/16384);
-      file->ino->sb->dir[extent].extnoh=EXTENTH((file->pos-1)/16384);
-      file->ino->sb->dir[extent].blkcnt=((file->pos-1)%16384)/128+1;
-      file->ino->sb->dir[extent].lrc=file->pos%128;
-      writePhysDirectory(file->ino->sb);
-    }
-  }
+  writePhysDirectory(file->ino->sb);
   return got;
 }
 /*}}}*/
@@ -1524,7 +1514,7 @@ int cpmChmod(struct cpmInode *ino, mode_t mode)
 	/* Convert the chmod() into a chattr() call that affects RO */
 	int newatt = ino->attr & ~CPM_ATTR_RO;
 
-	if ((mode & (S_IWUSR|S_IWGRP|S_IWOTH))) newatt |= CPM_ATTR_RO;
+	if (!(mode & (S_IWUSR|S_IWGRP|S_IWOTH))) newatt |= CPM_ATTR_RO;
 	return cpmAttrSet(ino, newatt);
 }
 /*}}}*/

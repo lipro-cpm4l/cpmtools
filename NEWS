@@ -1,7 +1,5 @@
-Changes since 2.7:
+Changes since 2.8:
 
-o  works on OS X
-o  use CP/M timestamps when copying files from CP/M
-o  Fixed various usage cases in cpmcp
-o  diskdefs for Interak computer system
-o  Different diskdefs location for Posix and Windows
+o  Fixed cpmchmod, cpmrm and cpmchattr
+o  Added --with-diskdefs to specify alternate diskdefs path
+o  Rewrote code for writing blocks
