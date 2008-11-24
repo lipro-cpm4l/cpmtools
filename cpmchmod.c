@@ -44,8 +44,8 @@ int main(int argc, char *argv[]) /*{{{*/
   if (optind>=(argc-2)) usage=1;
   else 
   {
-    image=argv[optind];
-    if (!sscanf(argv[optind+1], "%o", &mode)) usage=1;
+    image=argv[optind++];
+    if (!sscanf(argv[optind++], "%o", &mode)) usage=1;
   }    
 
   if (usage)

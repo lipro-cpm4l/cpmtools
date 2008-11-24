@@ -1,8 +1,8 @@
 AC_INIT(cpmfs.c)
 AC_CONFIG_HEADER(config.h)
 AC_CANONICAL_HOST
-VERSION=2.8
-UPDATED='June 16, 2008'
+VERSION=2.9
+UPDATED='November 20, 2009'
 
 DEVICE="posix"
 
@@ -27,6 +27,25 @@ else
   LDFLAGS="${LDFLAGS} ${EXTRA_LDFLAGS}"
 fi
 
+AC_CYGWIN
+AC_MINGW32
+dnl Choose between posix and win32 drivers...
+DEVICE="posix"
+
+DISKDEFS='${datarootdir}/diskdefs'
+if test "$CYGWIN" = "yes"
+then
+  DEVICE="win32"
+  DISKDEFS='%USERPROFILE%/diskdefs'
+fi
+if test "$MINGW32" = "yes"
+then
+  DEVICE="win32"
+  DISKDEFS='%USERPROFILE%\\diskdefs'
+fi
+
+AC_ARG_WITH(diskdefs,[  --with-diskdefs         Specify diskdefs location], 
+		[DISKDEFS="$withval"], [DISKDEFS="$DISKDEFS"])
 AC_ARG_WITH(defformat,[  --with-defformat        Specify default format (ibm-3740)], 
 		[DEFFORMAT="$withval"], [DEFFORMAT="ibm-3740"])
 AC_ARG_WITH(libdsk,   [  --with-libdsk           Specify path to libdsk library], 
@@ -36,24 +55,6 @@ AC_ARG_WITH(dmalloc,  [  --with-dmalloc          Specify path to dmalloc library
                  LDFLAGS="$LDFLAGS -L$with_dmalloc/lib"
                  LIBS="$LIBS -ldmalloc"
                  AC_DEFINE(USE_DMALLOC)])
-
-AC_CYGWIN
-AC_MINGW32
-dnl Choose between posix and win32 drivers...
-DEVICE="posix"
-DISKDEFS='${datarootdir}/diskdefs'
-
-if test "$CYGWIN" = "yes"
-then
-  DEVICE="win32"
-  DISKDEFS='%USERPROFILE%\\diskdefs'
-fi
-if test "$MINGW32" = "yes"
-then
-  DEVICE="win32"
-  DISKDEFS='%USERPROFILE%\\diskdefs'
-fi
-
 
 dnl Check for curses. If not found, don't build fsed.cpm
 dnl Try both curses and ncurses
