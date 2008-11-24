@@ -1,0 +1,34 @@
+version: '{build}'
+os: Windows Server 2012
+
+environment:
+  CYG_MIRROR: http://cygwin.mirror.constant.com
+  CYG_PACKAGES: make,gcc-core,mingw64-i686-gcc-core,mingw64-x86_64-gcc-core,libncurses-devel
+  matrix:
+  - CYG_ROOT: C:\cygwin
+    CYG_CACHE: C:\cygwin\var\cache\setup
+    CYG_SETUP: setup-x86.exe
+    BASH: C:\cygwin\bin\bash
+    CC: gcc
+  - CYG_ROOT: C:\cygwin64
+    CYG_CACHE: C:\cygwin64\var\cache\setup
+    CYG_SETUP: setup-x86_64.exe
+    BASH: C:\cygwin64\bin\bash
+    CC: gcc
+
+install:
+  - ps: if (Test-Path Env:\CYG_ROOT) { Start-FileDownload "https://cygwin.com/$env:CYG_SETUP" -FileName "$env:CYG_SETUP" }
+  - cmd: if defined CYG_ROOT (%CYG_SETUP% --quiet-mode --no-shortcuts --only-site --root "%CYG_ROOT%" --site "%CYG_MIRROR%" --local-package-dir "%CYG_CACHE%" --packages "%CYG_PACKAGES%" --upgrade-also)
+# - cmd: if defined CYG_ROOT (cygcheck -drs)
+
+init:
+  - git config --global core.autocrlf input
+
+build_script:
+  - cmd: if defined BASH (%BASH% -lc "cd $(cygpath ${APPVEYOR_BUILD_FOLDER}) && CPPFLAGS=-D_WIN32 ./configure --with-diskdefs=/usr/local/share/diskdefs")
+  - cmd: if defined BASH (%BASH% -lc "cd $(cygpath ${APPVEYOR_BUILD_FOLDER}) && make all && make fsck.test && mkdir -p /usr/local/share /usr/local/share/man/man1 /usr/local/share/man/man5 && make install")
+
+test: false
+
+cache:
+  - '%CYG_CACHE%'
