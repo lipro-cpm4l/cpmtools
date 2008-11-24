@@ -30,7 +30,8 @@ All features of CP/M file systems are supported.
 You will need an ANSI standard C compiler, prefered is the GNU CC.
 Optional you can build against the disk image library `libdsk`.
 You should by able to compile and work out of the box on each POSIX
-compliant system (Linux, BSD and MacOS).
+compliant system (Linux, BSD and MacOS).  It can be additionally
+compiled for Win32 or Cygwin systems.
 
 ```bash
 sudo apt-get install libncurses-dev
@@ -113,8 +114,19 @@ authors:**
 
 > - **John Elliott**:
 >   LibDsk integration and bringing cpmtools to Windows.
+> - **Bill Buckels**:
+>   Building cpmtools-2.9 in Windows XP, the Cygwin port.
+> - **David Schmidt**, **Udo Munk**, **Peter Dassow**:
+>   For Cygwin feedback.
+> - **Stevo Tarkin**, **Volker Pohlers**:
+>   For Msys feedback.
+> - **Rolf Harmann**:
+>   For Linux feedback.
+> - **Richard Brady**:
+>   who may or may not know watfor:)
 > - **Raoul Golan**:
 >   Contributed code to read apple II disk images.
 
 *see*: [COPYING](COPYING), [README](README),
+[README.win32.cygwin.txt](README.win32.cygwin.txt),
 [README.win32](README.win32)
