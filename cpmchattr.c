@@ -43,8 +43,8 @@ int main(int argc, char *argv[]) /*{{{*/
   if (optind>=(argc-2)) usage=1;
   else 
   {
-    image=argv[optind];
-    attrs = argv[optind+1];
+    image=argv[optind++];
+    attrs = argv[optind++];
   }    
 
   if (usage)

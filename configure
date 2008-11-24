@@ -1268,6 +1268,7 @@ Optional Features:
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
+  --with-diskdefs         Specify diskdefs location
   --with-defformat        Specify default format (ibm-3740)
   --with-libdsk           Specify path to libdsk library
   --with-dmalloc          Specify path to dmalloc library
@@ -1820,8 +1821,8 @@ IFS=$ac_save_IFS
 case $host_os in *\ *) host_os=`echo "$host_os" | sed 's/ /-/g'`;; esac
 
 
-VERSION=2.8
-UPDATED='June 16, 2008'
+VERSION=2.9
+UPDATED='November 20, 2009'
 
 DEVICE="posix"
 
@@ -3072,35 +3073,6 @@ else
   LDFLAGS="${LDFLAGS} ${EXTRA_LDFLAGS}"
 fi
 
-
-# Check whether --with-defformat was given.
-if test "${with_defformat+set}" = set; then
-  withval=$with_defformat; DEFFORMAT="$withval"
-else
-  DEFFORMAT="ibm-3740"
-fi
-
-
-# Check whether --with-libdsk was given.
-if test "${with_libdsk+set}" = set; then
-  withval=$with_libdsk; LIBDSK="$withval"
-else
-  LIBDSK=""
-fi
-
-
-# Check whether --with-dmalloc was given.
-if test "${with_dmalloc+set}" = set; then
-  withval=$with_dmalloc; CPPFLAGS="$CPPFLAGS -I$with_dmalloc/include"
-                 LDFLAGS="$LDFLAGS -L$with_dmalloc/lib"
-                 LIBS="$LIBS -ldmalloc"
-                 cat >>confdefs.h <<\_ACEOF
-#define USE_DMALLOC 1
-_ACEOF
-
-fi
-
-
 { echo "$as_me:$LINENO: checking host system type" >&5
 echo $ECHO_N "checking host system type... $ECHO_C" >&6; }
 if test "${ac_cv_host+set}" = set; then
@@ -3186,17 +3158,53 @@ case $host_os in
 esac
 
 DEVICE="posix"
-DISKDEFS='${datarootdir}/diskdefs'
 
+DISKDEFS='${datarootdir}/diskdefs'
 if test "$CYGWIN" = "yes"
 then
   DEVICE="win32"
-  DISKDEFS='%USERPROFILE%\\diskdefs'
+  DISKDEFS='%USERPROFILE%/diskdefs'
 fi
 if test "$MINGW32" = "yes"
 then
   DEVICE="win32"
   DISKDEFS='%USERPROFILE%\\diskdefs'
+fi
+
+
+# Check whether --with-diskdefs was given.
+if test "${with_diskdefs+set}" = set; then
+  withval=$with_diskdefs; DISKDEFS="$withval"
+else
+  DISKDEFS="$DISKDEFS"
+fi
+
+
+# Check whether --with-defformat was given.
+if test "${with_defformat+set}" = set; then
+  withval=$with_defformat; DEFFORMAT="$withval"
+else
+  DEFFORMAT="ibm-3740"
+fi
+
+
+# Check whether --with-libdsk was given.
+if test "${with_libdsk+set}" = set; then
+  withval=$with_libdsk; LIBDSK="$withval"
+else
+  LIBDSK=""
+fi
+
+
+# Check whether --with-dmalloc was given.
+if test "${with_dmalloc+set}" = set; then
+  withval=$with_dmalloc; CPPFLAGS="$CPPFLAGS -I$with_dmalloc/include"
+                 LDFLAGS="$LDFLAGS -L$with_dmalloc/lib"
+                 LIBS="$LIBS -ldmalloc"
+                 cat >>confdefs.h <<\_ACEOF
+#define USE_DMALLOC 1
+_ACEOF
+
 fi
 
 
