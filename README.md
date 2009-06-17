@@ -130,4 +130,4 @@ authors:**
 
 *see*: [COPYING](COPYING), [README](README),
 [README.win32.cygwin.txt](README.win32.cygwin.txt),
-[README.win32](README.win32)
+[README.win32-libdsk](README.win32-libdsk)
