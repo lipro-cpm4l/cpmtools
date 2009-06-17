@@ -270,3 +270,51 @@ diskdef interak
   boottrk 2
   os 2.2
 end
+
+# Timex FDD3000 3"
+diskdef fdd3000
+  seclen 256
+  tracks 40
+  sectrk 16
+  blocksize 1024
+  maxdir 128
+  boottrk 4
+  os 2.2
+  skew 7
+end
+
+# Timex FDD3000 3"
+diskdef fdd3000_2
+  seclen 256
+  tracks 40
+  sectrk 16
+  blocksize 1024
+  maxdir 128
+  boottrk 2
+  os 2.2
+  skew 5
+end
+
+# Robotron 1715
+diskdef 1715
+  seclen 1024
+  tracks 40
+  sectrk 5
+  blocksize 1024
+  maxdir 64
+  skew 0
+  boottrk 3
+  os 2.2
+end
+
+# Robotron 1715 with SCP3
+diskdef 17153
+  seclen 1024
+  tracks 160
+  sectrk 5
+  blocksize 2048
+  maxdir 128
+  skew 0
+  boottrk 4
+  os 3
+end

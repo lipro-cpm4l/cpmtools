@@ -218,7 +218,7 @@ static void alvInit(const struct cpmSuperBlock *d)
       {
         block=(unsigned char)d->dir[i].pointers[j];
         if (d->size>=256) block+=(((unsigned char)d->dir[i].pointers[++j])<<8);
-        if (block)
+        if (block && block<d->size)
         {
 #ifdef CPMFS_DEBUG
           fprintf(stderr,"alvInit: allocate block %d\n",block);
@@ -481,6 +481,11 @@ static int diskdefReadSuper(struct cpmSuperBlock *d, const char *format)
           else if (strcmp(argv[1],"3")==0) d->type=CPMFS_DR3;
           else if (strcmp(argv[1],"p2dos")==0) d->type=CPMFS_P2DOS;
         }
+      }
+      else if (argc>0 && argv[0][0]!='#')
+      {
+        fprintf(stderr,"%s: invalid keyword `%s'\n",cmd,argv[0]);
+        exit(1);
       }
     }
     else if (argc==2 && strcmp(argv[0],"diskdef")==0)

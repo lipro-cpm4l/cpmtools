@@ -1,8 +1,8 @@
 AC_INIT(cpmfs.c)
 AC_CONFIG_HEADER(config.h)
 AC_CANONICAL_HOST
-VERSION=2.9
-UPDATED='November 20, 2009'
+VERSION=2.10
+UPDATED='July 6, 2009'
 
 DEVICE="posix"
 
@@ -33,15 +33,16 @@ dnl Choose between posix and win32 drivers...
 DEVICE="posix"
 
 DISKDEFS='${datarootdir}/diskdefs'
+
 if test "$CYGWIN" = "yes"
 then
   DEVICE="win32"
-  DISKDEFS='%USERPROFILE%/diskdefs'
+#  DISKDEFS='%USERPROFILE%/diskdefs'
 fi
 if test "$MINGW32" = "yes"
 then
   DEVICE="win32"
-  DISKDEFS='%USERPROFILE%\\diskdefs'
+#  DISKDEFS='%USERPROFILE%\\diskdefs'
 fi
 
 AC_ARG_WITH(diskdefs,[  --with-diskdefs         Specify diskdefs location], 
