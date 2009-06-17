@@ -1,5 +1,3 @@
-Changes since 2.8:
+Changes since 2.9:
 
-o  Fixed cpmchmod, cpmrm and cpmchattr
-o  Added --with-diskdefs to specify alternate diskdefs path
-o  Rewrote code for writing blocks
+o  New diskdefs entry for Robotron 1715 with SCP3

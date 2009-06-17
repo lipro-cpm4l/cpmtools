@@ -93,7 +93,7 @@ install:	all
 		$(INSTALL_DATA) cpmcp.1 $(MANDIR)/man1/cpmcp.1
 		$(INSTALL_DATA) cpmrm.1 $(MANDIR)/man1/cpmrm.1
 		$(INSTALL_DATA) cpmchmod.1 $(MANDIR)/man1/cpmchmod.1
-		$(INSTALL_DATA) cpmchmod.1 $(MANDIR)/man1/cpmchattr.1
+		$(INSTALL_DATA) cpmchattr.1 $(MANDIR)/man1/cpmchattr.1
 		$(INSTALL_DATA) mkfs.cpm.1 $(MANDIR)/man1/mkfs.cpm.1
 		$(INSTALL_DATA) fsck.cpm.1 $(MANDIR)/man1/fsck.cpm.1
 		$(INSTALL_DATA) fsed.cpm.1 $(MANDIR)/man1/fsed.cpm.1
