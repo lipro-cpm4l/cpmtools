@@ -1,4 +1,4 @@
-.TH CPMCHATTR 1 "November 20, 2009" "CP/M tools" "User commands"
+.TH CPMCHATTR 1 "July 6, 2009" "CP/M tools" "User commands"
 .SH NAME \"{{{roff}}}\"{{{
 cpmchattr \- change file attributes on CP/M files
 .\"}}}
@@ -24,12 +24,17 @@ Set the file attributes as given.
 .\"}}}
 .SH "FILE ATTRIBUTES" \"{{{
 The file attribute string can contain the characters
-1,2,3,4,s,a,N and M.
+1,2,3,4,r,s,a,n and m.
 The meanings of these are:
 .TP
 .B 1-4
 The CP/M "user attributes" F1-F4.  CP/M does not assign any
 meaning to these attributes, though MP/M does.
+.TP
+.B r
+The file is read-only.  This is the same as using
+.I cpmchmod(1)
+to revoke write permissions.
 .TP
 .B s
 The file is a system file.  This attribute can also be set by
@@ -38,12 +43,12 @@ The file is a system file.  This attribute can also be set by
 .B a
 The file has been backed up.
 .TP
-.B N
-Reset all attributes to zero.  So the string "N1r" resets all attributes and
+.B n
+Reset all attributes to zero.  So the string "n1r" resets all attributes and
 then sets F1 and Read-Only.
 .TP
-.B M
-Attributes after an M are unset rather than set.  The string "12M34" sets
+.B m
+Attributes after an m are unset rather than set.  The string "12m34" sets
 atttributes F1 and F2, and unsets F3 and F4.
 .\"}}}
 .SH "RETURN VALUE" \"{{{
