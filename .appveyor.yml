@@ -3,7 +3,7 @@ os: Windows Server 2012
 
 environment:
   CYG_MIRROR: http://cygwin.mirror.constant.com
-  CYG_PACKAGES: make,gcc-core,mingw64-i686-gcc-core,mingw64-x86_64-gcc-core,libncurses-devel
+  CYG_PACKAGES: make,gcc-core,mingw64-i686-gcc-core,mingw64-x86_64-gcc-core,w32api-headers,libncurses-devel
   matrix:
   - CYG_ROOT: C:\cygwin
     CYG_CACHE: C:\cygwin\var\cache\setup
