@@ -473,6 +473,34 @@ static int diskdefReadSuper(struct cpmSuperBlock *d, const char *format)
         else if (strcmp(argv[0],"blocksize")==0) d->blksiz=strtol(argv[1],(char**)0,0);
         else if (strcmp(argv[0],"maxdir")==0) d->maxdir=strtol(argv[1],(char**)0,0);
         else if (strcmp(argv[0],"skew")==0) d->skew=strtol(argv[1],(char**)0,0);
+        else if (strcmp(argv[0],"skewtab")==0)
+        {
+          int pass,sectors;
+
+          for (pass=0; pass<2; ++pass)
+          {
+            char *s;
+
+            sectors=0;
+            for (s=argv[1]; *s; )
+            {
+              int phys;
+              char *end;
+
+              phys=strtol(s,&end,10);
+              if (pass==1) d->skewtab[sectors]=phys;
+              if (end==s)
+              {
+                fprintf(stderr,"%s: invalid skewtab `%s' at `%s'\n",cmd,argv[1],s);
+                exit(1);
+              }
+              s=end;
+              ++sectors;
+              if (*s==',') ++s;
+            }
+            if (pass==0) d->skewtab=malloc(sizeof(int)*sectors);
+          }
+        }
         else if (strcmp(argv[0],"boottrk")==0) d->boottrk=strtol(argv[1],(char**)0,0);
         else if (strcmp(argv[0],"logicalextents")==0) d->extents=strtol(argv[1],(char**)0,0);
         else if (strcmp(argv[0],"os")==0)
@@ -494,6 +522,7 @@ static int diskdefReadSuper(struct cpmSuperBlock *d, const char *format)
       d->skew=1;
       d->extents=0;
       d->type=CPMFS_DR3;
+      d->skewtab=(int*)0;
       if (strcmp(argv[1],format)==0) found=1;
     }
   }
@@ -551,6 +580,7 @@ static int amsReadSuper(struct cpmSuperBlock *d, const char *format)
   d->blksiz    = 128 << boot_spec[6];
   d->maxdir    = (d->blksiz / 32) * boot_spec[7];
   d->skew      = 1; /* Amstrads skew at the controller level */
+  d->skewtab   = (int*)0;
   d->boottrk   = boot_spec[5];
   d->size      = (d->secLength*d->sectrk*(d->tracks-d->boottrk))/d->blksiz;
   d->extents   = ((d->size>=256 ? 8 : 16)*d->blksiz)/16384;
@@ -666,26 +696,15 @@ int cpmReadSuper(struct cpmSuperBlock *d, struct cpmInode *root, const char *for
   if (strcmp(format, "amstrad")==0) amsReadSuper(d,format);
   else diskdefReadSuper(d,format);
   Device_setGeometry(&d->dev,d->secLength,d->sectrk,d->tracks);
-  /* generate skew table */ /*{{{*/
-  if (( d->skewtab = malloc(d->sectrk*sizeof(int))) == (int*)0) 
-  {
-    fprintf(stderr,"%s: can not allocate memory for skew sector table\n",cmd);
-    exit(1);
-  }
-  if (strcmp(format,"apple-do")==0)
-  {
-    static int skew[]={0,6,12,3,9,15,14,5,11,2,8,7,13,4,10,1};
-    memcpy(d->skewtab,skew,d->sectrk*sizeof(int));
-  }
-  else if (strcmp(format,"apple-po")==0)
-  {
-    static int skew[]={0,9,3,12,6,15,1,10,4,13,7,8,2,11,5,14};
-    memcpy(d->skewtab,skew,d->sectrk*sizeof(int));
-  }
-  else
+  if (d->skewtab==(int*)0) /* generate skew table */ /*{{{*/
   {
     int	i,j,k;
 
+    if (( d->skewtab = malloc(d->sectrk*sizeof(int))) == (int*)0) 
+    {
+      fprintf(stderr,"%s: can not allocate memory for skew sector table\n",cmd);
+      exit(1);
+    }
     for (i=j=0; i<d->sectrk; ++i,j=(j+d->skew)%d->sectrk)
     {
       while (1)
@@ -922,7 +941,7 @@ int cpmNamei(const struct cpmInode *dir, const char *filename, struct cpmInode *
         u_days=((unsigned char)date->name[4])+(((unsigned char)date->name[5])<<8);
         u_hour=(unsigned char)date->name[6];
         u_min=(unsigned char)date->name[7];
-	protectMode=(unsigned char)date->name[8];
+	protectMode=(unsigned char)date->ext[0];
         break;
       }
       /*}}}*/
@@ -1193,7 +1212,8 @@ int cpmReaddir(struct cpmFile *dir, struct cpmDirent *ent)
           }
           *bufp='\0';
           /*}}}*/
-          ent->reclen=strlen(buf);
+          assert(bufp<=buf+sizeof(buf));
+          ent->reclen=bufp-buf;
           strcpy(ent->name,buf);
           ent->off=dir->pos;
           ++dir->pos;

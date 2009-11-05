@@ -3,13 +3,8 @@ Options for "./configure" include:
   --with-defformat=<default-format>
                   Set the standard format the cpmtools will use.
                   Default is ibm-3740
-  --with-device=<device>
-                  Set the method cpmtools will use to access discs. One of:
-		  posix: Use the original cpmtools driver for raw files or 
-			Unix floppy drives.
-                  win32: Use the original cpmtools driver for raw files or 
-			Windows floppy drives.
-		  LibDsk: Use LibDsk to access raw files, .DSK files, MYZ80 
+  --with-libdsk=path
+                  Use LibDsk to access raw files, .DSK files, MYZ80 
                         files and Unix/Windows floppy drives.  This library
                         is available at:
                         http://www.seasip.demon.co.uk/Unix/LibDsk/

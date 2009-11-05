@@ -88,7 +88,7 @@ diskdef apple-do
   sectrk 16
   blocksize 1024
   maxdir 64
-  skew 0
+  skewtab 0,6,12,3,9,15,14,5,11,2,8,7,13,4,10,1
   boottrk 3
   os 2.2
 end
@@ -100,7 +100,7 @@ diskdef apple-po
   sectrk 16
   blocksize 1024
   maxdir 64
-  skew 0
+  skewtab 0,9,3,12,6,15,1,10,4,13,7,8,2,11,5,14
   boottrk 3
   os 2.2
 end
@@ -315,6 +315,62 @@ diskdef 17153
   blocksize 2048
   maxdir 128
   skew 0
+  boottrk 4
+  os 3
+end
+
+# Visual Technology Visual 1050 computer
+diskdef v1050
+  seclen 512
+  tracks 80
+  sectrk 10
+  blocksize 2048
+  maxdir 128
+  skew 0
+  boottrk 2
+  os 3
+end
+
+# Microbee 40 track 5.25" disks
+diskdef microbee40
+  seclen 512
+  tracks 80
+  sectrk 10
+  blocksize 2048
+  maxdir 128
+  skewtab 1,4,7,0,3,6,9,2,5,8
+  boottrk 2
+  os 2.2
+end
+
+diskdef dreamdisk40
+  seclen 512
+  tracks 80
+  sectrk 10
+  blocksize 2048
+  maxdir 128
+  skewtab 1,4,7,0,3,6,9,2,5,8
+  boottrk 2
+  os 2.2
+end
+
+diskdef dreamdisk80
+  seclen 512
+  tracks 160
+  sectrk 10
+  blocksize 2048
+  maxdir 256
+  skewtab 1,4,7,0,3,6,9,2,5,8
+  boottrk 2
+  os 2.2
+end
+
+diskdef rc759
+  seclen 1024
+  tracks 160
+  sectrk 8
+  blocksize 2048
+  maxdir 512
   boottrk 4
   os 3
 end
