@@ -175,7 +175,7 @@ int main(int argc, char *argv[]) /*{{{*/
   /*}}}*/
 
   /* parse options */ /*{{{*/
-  while ((c=getopt(argc,argv,"f:h?"))!=EOF) switch(c)
+  while ((c=getopt(argc,argv,"T:f:h?"))!=EOF) switch(c)
   {
     case 'f': format=optarg; break;
     case 'T': devopts=optarg; break;
