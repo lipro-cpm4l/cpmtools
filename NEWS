@@ -1,3 +1,7 @@
-Changes since 2.9:
+Changes since 2.10:
 
-o  New diskdefs entry for Robotron 1715 with SCP3
+o  New diskdefs option skewtab allows to specify arbitrary skew tables
+o  New diskdefs entry for Visual Technology Visual 1050 computer
+o  New diskdefs entry for Microbee 40 track 5.25" disks
+o  New diskdefs entry for RC759
+o  Fix INSTALL file
