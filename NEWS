@@ -1,7 +1,5 @@
-Changes since 2.10:
+Changes since 2.12:
 
-o  New diskdefs option skewtab allows to specify arbitrary skew tables
-o  New diskdefs entry for Visual Technology Visual 1050 computer
-o  New diskdefs entry for Microbee 40 track 5.25" disks
-o  New diskdefs entry for RC759
-o  Fix INSTALL file
+o  Fix for cpmcp to open files as "rb"
+o  Fixes for MinGW
+o  Skew table generation bugfix
