@@ -705,6 +705,7 @@ int cpmReadSuper(struct cpmSuperBlock *d, struct cpmInode *root, const char *for
       fprintf(stderr,"%s: can not allocate memory for skew sector table\n",cmd);
       exit(1);
     }
+    memset(d->skewtab,0,d->sectrk*sizeof(int));
     for (i=j=0; i<d->sectrk; ++i,j=(j+d->skew)%d->sectrk)
     {
       while (1)

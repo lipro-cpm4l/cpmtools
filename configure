@@ -2235,8 +2235,8 @@ IFS=$ac_save_IFS
 case $host_os in *\ *) host_os=`echo "$host_os" | sed 's/ /-/g'`;; esac
 
 
-VERSION=2.11
-UPDATED='November 5, 2009'
+VERSION=2.12
+UPDATED='December 20, 2009'
 
 DEVICE="posix"
 
@@ -2244,6 +2244,9 @@ if test "$prefix" = NONE
 then
   case $host in
     *-linux-*)
+    ;;
+    *-pc-mingw32)
+      CFLAGS_LIBDSK=-DNOTWINDLL
     ;;
   esac
 fi
@@ -3408,7 +3411,7 @@ fi
 if test "$LIBDSK" != ""; then
   DEVICE="libdsk"
   CPPFLAGS="$CPPFLAGS -I$LIBDSK/include"
-  CFLAGS="$CFLAGS -I$LIBDSK/include"
+  CFLAGS="$CFLAGS -I$LIBDSK/include $CFLAGS_LIBDSK"
   LDFLAGS="$LDFLAGS -L$LIBDSK/lib"
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for dsk_open in -ldsk" >&5
 $as_echo_n "checking for dsk_open in -ldsk... " >&6; }
@@ -3733,18 +3736,34 @@ done
 fi
 
 if test x"$DEVICE" = x"win32"; then
-  for ac_header in windows.h winioctl.h
+  for ac_header in windows.h
 do :
-  as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
-ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
-eval as_val=\$$as_ac_Header
-   if test "x$as_val" = x""yes; then :
+  ac_fn_c_check_header_mongrel "$LINENO" "windows.h" "ac_cv_header_windows_h" "$ac_includes_default"
+if test "x$ac_cv_header_windows_h" = x""yes; then :
   cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
+#define HAVE_WINDOWS_H 1
 _ACEOF
 
 else
-  echo "Windows headers not found - aborting"; exit 1
+  echo "Device win32, but <windows.h> not found - aborting"; exit 1
+fi
+
+done
+
+  for ac_header in winioctl.h
+do :
+  ac_fn_c_check_header_compile "$LINENO" "winioctl.h" "ac_cv_header_winioctl_h" "#ifdef HAVE_WINDOWS_H
+#include <windows.h>
+#endif
+
+"
+if test "x$ac_cv_header_winioctl_h" = x""yes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_WINIOCTL_H 1
+_ACEOF
+
+else
+  echo "Device win32, but <winioctl.h> not found - aborting"; exit 1
 fi
 
 done
