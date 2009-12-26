@@ -1,8 +1,8 @@
 AC_INIT(cpmfs.c)
 AC_CONFIG_HEADER(config.h)
 AC_CANONICAL_HOST
-VERSION=2.11
-UPDATED='November 5, 2009'
+VERSION=2.12
+UPDATED='December 20, 2009'
 
 DEVICE="posix"
 
@@ -10,6 +10,9 @@ if test "$prefix" = NONE
 then
   case $host in
     *-linux-*)
+    ;;
+    *-pc-mingw32)
+      CFLAGS_LIBDSK=-DNOTWINDLL
     ;;
   esac
 fi
@@ -68,7 +71,7 @@ dnl If using libdsk, check it's available.
 if test "$LIBDSK" != ""; then
   DEVICE="libdsk"
   CPPFLAGS="$CPPFLAGS -I$LIBDSK/include"
-  CFLAGS="$CFLAGS -I$LIBDSK/include"
+  CFLAGS="$CFLAGS -I$LIBDSK/include $CFLAGS_LIBDSK"
   LDFLAGS="$LDFLAGS -L$LIBDSK/lib"
   AC_CHECK_LIB(dsk, dsk_open)
   AC_CHECK_HEADERS(libdsk.h, ,[echo "No libdsk.h - aborting"; exit 1])
@@ -76,7 +79,12 @@ fi
 
 dnl If using win32, check it's available. 
 if test x"$DEVICE" = x"win32"; then
-  AC_CHECK_HEADERS(windows.h winioctl.h, ,[echo "Windows headers not found - aborting"; exit 1] )
+  AC_CHECK_HEADERS(windows.h, ,[echo "Device win32, but <windows.h> not found - aborting"; exit 1] )
+  AC_CHECK_HEADERS(winioctl.h, ,[echo "Device win32, but <winioctl.h> not found - aborting"; exit 1],
+[#ifdef HAVE_WINDOWS_H
+#include <windows.h>
+#endif
+])
 fi
 
 dnl Checks for header files.

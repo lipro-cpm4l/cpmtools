@@ -216,7 +216,7 @@ int main(int argc, char *argv[])
       FILE *ufp;
       /*}}}*/
 
-      if ((ufp=fopen(argv[i],"r"))==(FILE*)0) /* cry a little */ /*{{{*/
+      if ((ufp=fopen(argv[i],"rb"))==(FILE*)0) /* cry a little */ /*{{{*/
       {
         fprintf(stderr,"%s: can not open %s: %s\n",cmd,argv[i],strerror(errno));
         exitcode=1;
@@ -225,7 +225,7 @@ int main(int argc, char *argv[])
       else
       {
         struct cpmInode ino;
-        char cpmname[2+8+3+1]; /* 00foobarxy.zzy\0 */
+        char cpmname[2+8+1+3+1]; /* 00foobarxy.zzy\0 */
 
         if (todir)
         {

@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <ctype.h>
+#include <stdio.h>
 
 #include "cpmdir.h"
 #include "cpmfs.h"
@@ -20,10 +21,10 @@
 #define USE_INT13
 
 /* Windows 95 disk I/O functions - based on Stan Mitchell's DISKDUMP.C */
-#define VWIN32_DIOC_DOS_IOCTL   1   // DOS ioctl calls 4400h-4411h
-#define VWIN32_DIOC_DOS_INT25   2   // absolute disk read, DOS int 25h
-#define VWIN32_DIOC_DOS_INT26   3   // absolute disk write, DOS int 26h
-#define VWIN32_DIOC_DOS_INT13   4   // BIOS INT13 functions
+#define VWIN32_DIOC_DOS_IOCTL   1   /* DOS ioctl calls 4400h-4411h */
+#define VWIN32_DIOC_DOS_INT25   2   /* absolute disk read, DOS int 25h */
+#define VWIN32_DIOC_DOS_INT26   3   /* absolute disk write, DOS int 26h */
+#define VWIN32_DIOC_DOS_INT13   4   /* BIOS INT13 functions */
 
 typedef struct _DIOC_REGISTERS {
     DWORD reg_EBX;
@@ -52,17 +53,17 @@ typedef struct _DIOC_REGISTERS {
 #pragma pack(1)
 
 typedef struct _DISKIO {
-    DWORD diStartSector;    // sector number to start at
-    WORD  diSectors;        // number of sectors
-    DWORD diBuffer;         // address of buffer
+    DWORD diStartSector;    /* sector number to start at */
+    WORD  diSectors;        /* number of sectors */
+    DWORD diBuffer;         /* address of buffer */
     }
     DISKIO, *PDISKIO;
 
 typedef struct MID {
-    WORD  midInfoLevel;       // information level, must be 0
-    DWORD midSerialNum;       // serial number for the medium
-    char  midVolLabel[11];    // volume label for the medium
-    char  midFileSysType[8];  // type of file system as 8-byte ASCII
+    WORD  midInfoLevel;       /* information level, must be 0 */
+    DWORD midSerialNum;       /* serial number for the medium */
+    char  midVolLabel[11];    /* volume label for the medium */
+    char  midFileSysType[8];  /* type of file system as 8-byte ASCII */
     }
     MID, *PMID;
 
@@ -99,7 +100,7 @@ static char *strwin32error(void) /*{{{*/
     FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
                   NULL,
                   GetLastError(),
-                  MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
+                  MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), /* Default language */
                   (LPTSTR)buffer,
                   1023, NULL);
     return buffer;
@@ -135,11 +136,11 @@ static int GetDriveParams( HANDLE hVWin32Device, int volume, DRIVEPARAMS* pParam
   BOOL bResult;
   DWORD cb;
 
-  reg.reg_EAX = 0x440d; // IOCTL for block device
-  reg.reg_EBX = volume; // one-based drive number
-  reg.reg_ECX = 0x0860; // Get Device params
+  reg.reg_EAX = 0x440d; /* IOCTL for block device */
+  reg.reg_EBX = volume; /* one-based drive number */
+  reg.reg_ECX = 0x0860; /* Get Device params */
   reg.reg_EDX = (DWORD)pParam;
-  reg.reg_Flags = 1; // preset the carry flag
+  reg.reg_Flags = 1; /* preset the carry flag */
 
   bResult = DeviceIoControl( hVWin32Device, VWIN32_DIOC_DOS_IOCTL,
               &reg, sizeof( reg ), &reg, sizeof( reg ), &cb, 0 ); 
@@ -156,11 +157,11 @@ static int SetDriveParams( HANDLE hVWin32Device, int volume, DRIVEPARAMS* pParam
   BOOL bResult;
   DWORD cb;
 
-  reg.reg_EAX = 0x440d; // IOCTL for block device
-  reg.reg_EBX = volume; // one-based drive number
-  reg.reg_ECX = 0x0840; // Set Device params
+  reg.reg_EAX = 0x440d; /* IOCTL for block device */
+  reg.reg_EBX = volume; /* one-based drive number */
+  reg.reg_ECX = 0x0840; /* Set Device params */
   reg.reg_EDX = (DWORD)pParam;
-  reg.reg_Flags = 1; // preset the carry flag
+  reg.reg_Flags = 1; /* preset the carry flag */
 
   bResult = DeviceIoControl( hVWin32Device, VWIN32_DIOC_DOS_IOCTL,
               &reg, sizeof( reg ), &reg, sizeof( reg ), &cb, 0 ); 
@@ -177,11 +178,11 @@ static int GetMediaID( HANDLE hVWin32Device, int volume, MID* pMid ) /*{{{*/
   BOOL bResult;
   DWORD cb;
 
-  reg.reg_EAX = 0x440d; // IOCTL for block device
-  reg.reg_EBX = volume; // one-based drive number
-  reg.reg_ECX = 0x0866; // Get Media ID
+  reg.reg_EAX = 0x440d; /* IOCTL for block device */
+  reg.reg_EBX = volume; /* one-based drive number */
+  reg.reg_ECX = 0x0866; /* Get Media ID */
   reg.reg_EDX = (DWORD)pMid;
-  reg.reg_Flags = 1; // preset the carry flag
+  reg.reg_Flags = 1; /* preset the carry flag */
 
   bResult = DeviceIoControl( hVWin32Device, VWIN32_DIOC_DOS_IOCTL,
               &reg, sizeof( reg ), &reg, sizeof( reg ), &cb, 0 );
@@ -198,9 +199,9 @@ static int VolumeCheck(HANDLE hVWin32Device, int volume, WORD* flags ) /*{{{*/
   BOOL bResult;
   DWORD cb;
 
-  reg.reg_EAX = 0x4409; // Is Drive Remote
-  reg.reg_EBX = volume; // one-based drive number
-  reg.reg_Flags = 1; // preset the carry flag
+  reg.reg_EAX = 0x4409; /* Is Drive Remote */
+  reg.reg_EBX = volume; /* one-based drive number */
+  reg.reg_Flags = 1; /* preset the carry flag */
 
   bResult = DeviceIoControl( hVWin32Device, VWIN32_DIOC_DOS_IOCTL,
               &reg, sizeof( reg ), &reg, sizeof( reg ), &cb, 0 ); 
@@ -218,11 +219,11 @@ static int LockLogicalVolume(HANDLE hVWin32Device, int volume, int lock_level, i
   BOOL bResult;
   DWORD cb;
 
-  reg.reg_EAX = 0x440d; // generic IOCTL
-  reg.reg_ECX = 0x084a; // lock logical volume 
+  reg.reg_EAX = 0x440d; /* generic IOCTL */
+  reg.reg_ECX = 0x084a; /* lock logical volume */
   reg.reg_EBX = volume | (lock_level << 8);
   reg.reg_EDX = permissions;
-  reg.reg_Flags = 1; // preset the carry flag
+  reg.reg_Flags = 1; /* preset the carry flag */
 
   bResult = DeviceIoControl( hVWin32Device, VWIN32_DIOC_DOS_IOCTL,
               &reg, sizeof( reg ), &reg, sizeof( reg ), &cb, 0 ); 
@@ -240,9 +241,9 @@ static int UnlockLogicalVolume( HANDLE hVWin32Device, int volume ) /*{{{*/
   DWORD cb;
 
   reg.reg_EAX = 0x440d;
-  reg.reg_ECX = 0x086a; // lock logical volume 
+  reg.reg_ECX = 0x086a; /* lock logical volume  */
   reg.reg_EBX = volume;
-  reg.reg_Flags = 1; // preset the carry flag
+  reg.reg_Flags = 1; /* preset the carry flag */
 
   bResult = DeviceIoControl( hVWin32Device, VWIN32_DIOC_DOS_IOCTL,
               &reg, sizeof( reg ), &reg, sizeof( reg ), &cb, 0 ); 
@@ -281,7 +282,7 @@ const char *Device_open(struct Device *sb, const char *filename, int mode, const
             MID media;
 
             vname[0] = toupper(filename[0]);
-            driveno = vname[0] - 'A' + 1;   // 1=A: 2=B:
+            driveno = vname[0] - 'A' + 1;   /* 1=A: 2=B: */
             sb->drvtype = CPMDRV_WIN95;
             sb->hdisk   = CreateFile( "\\\\.\\vwin32",
                                        0,
@@ -522,20 +523,20 @@ const char *Device_readSector(const struct Device *drive, int track, int sector,
         if (drive->tracks < 44) { cyl = track;    head = 0; }
         else                    { cyl = track/2;  head = track & 1; }
 
-        reg.reg_EAX      = 0x0201;  // Read 1 sector
+        reg.reg_EAX      = 0x0201;  /* Read 1 sector */
         reg.reg_EBX      = (DWORD)buf;
         reg.reg_ECX      = (cyl << 8)  | (sector + PHYSICAL_SECTOR_1);
         reg.reg_EDX      = (head << 8) | (drive->fd - 1);
-        reg.reg_Flags    = 1;       // preset the carry flag
+        reg.reg_Flags    = 1;       /* preset the carry flag */
         bResult          = DeviceIoControl( drive->hdisk, VWIN32_DIOC_DOS_INT13,
               &reg, sizeof( reg ), &reg, sizeof( reg ), &cb, 0 );
 #else
         DISKIO di;
 
-        reg.reg_EAX      = drive->fd - 1;  // zero-based volume number
+        reg.reg_EAX      = drive->fd - 1;  /* zero-based volume number */
         reg.reg_EBX      = (DWORD)&di;
-        reg.reg_ECX      = 0xffff;  // use DISKIO structure
-        reg.reg_Flags    = 1;       // preset the carry flag
+        reg.reg_ECX      = 0xffff;  /* use DISKIO structure */
+        reg.reg_Flags    = 1;       /* preset the carry flag */
         di.diStartSector = sector+track*drive->sectrk;
         di.diSectors     = 1;
         di.diBuffer      = (DWORD)buf;
@@ -618,20 +619,20 @@ const char *Device_writeSector(const struct Device *drive, int track, int sector
         if (drive->tracks < 44) { cyl = track;    head = 0; }
         else                    { cyl = track/2;  head = track & 1; }
 
-        reg.reg_EAX      = 0x0301;  // Write 1 sector
+        reg.reg_EAX      = 0x0301;  /* Write 1 sector */
         reg.reg_EBX      = (DWORD)buf;
         reg.reg_ECX      = (cyl << 8)  | (sector + PHYSICAL_SECTOR_1);
         reg.reg_EDX      = (head << 8) | (drive->fd - 1);
-        reg.reg_Flags    = 1;       // preset the carry flag
+        reg.reg_Flags    = 1;       /* preset the carry flag */
         bResult          = DeviceIoControl( drive->hdisk, VWIN32_DIOC_DOS_INT13,
               &reg, sizeof( reg ), &reg, sizeof( reg ), &cb, 0 );
 #else
         DISKIO di;
 
-        reg.reg_EAX      = drive->fd - 1;  // zero-based volume number
+        reg.reg_EAX      = drive->fd - 1;  /* zero-based volume number */
         reg.reg_EBX      = (DWORD)&di;
-        reg.reg_ECX      = 0xffff;  // use DISKIO structure
-        reg.reg_Flags    = 1;       // preset the carry flag
+        reg.reg_ECX      = 0xffff;  /* use DISKIO structure */
+        reg.reg_Flags    = 1;       /* preset the carry flag */
         di.diStartSector = sector+track*drive->sectrk;
         di.diSectors     = 1;
         di.diBuffer      = (DWORD)buf;
