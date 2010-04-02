@@ -127,6 +127,7 @@ struct cpmSuperBlock
   char *passwd;
   size_t passwdLength;
   struct cpmInode *root;
+  int dirtyDirectory;
 };
 
 struct cpmStatFS
