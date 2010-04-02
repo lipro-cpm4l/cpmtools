@@ -78,6 +78,7 @@ int main(int argc, char *argv[]) /*{{{*/
       exitcode=1;
     }
   }
+  cpmUmount(&drive);
   exit(exitcode);
 }
 /*}}}*/

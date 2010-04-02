@@ -324,36 +324,6 @@ static int writeBlock(const struct cpmSuperBlock *d, int blockno, const char *bu
 /*}}}*/
 
 /* directory management */
-/* readPhysDirectory  -- read directory from drive               */ /*{{{*/
-static int readPhysDirectory(const struct cpmSuperBlock *drive)
-{
-  int i,blocks,entry;
-
-  blocks=(drive->maxdir*32+drive->blksiz-1)/drive->blksiz;
-  entry=0;
-  for (i=0; i<blocks; ++i) 
-  {
-    if (readBlock(drive,i,(char*)(drive->dir+entry),0,-1)==-1) return -1;
-    entry+=(drive->blksiz/32);
-  }
-  return 0;
-}
-/*}}}*/
-/* writePhysDirectory -- write directory to drive                */ /*{{{*/
-static int writePhysDirectory(const struct cpmSuperBlock *drive)
-{
-  int i,blocks,entry;
-
-  blocks=(drive->maxdir*32+drive->blksiz-1)/drive->blksiz;
-  entry=0;
-  for (i=0; i<blocks; ++i) 
-  {
-    if (writeBlock(drive,i,(char*)(drive->dir+entry),0,-1)==-1) return -1;
-    entry+=(drive->blksiz/32);
-  }
-  return 0;
-}
-/*}}}*/
 /* findFileExtent     -- find first/next extent for a file       */ /*{{{*/
 static int findFileExtent(const struct cpmSuperBlock *sb, int user, const char *name, const char *ext, int start, int extno)
 {
@@ -396,6 +366,7 @@ static void updateTimeStamps(const struct cpmInode *ino, int extent)
   unix2cpm_time(ino->mtime,&u_days,&u_hour,&u_min);
   if ((ino->sb->type==CPMFS_P2DOS || ino->sb->type==CPMFS_DR3) && (date=ino->sb->dir+(extent|3))->status==0x21)
   {
+    ino->sb->dirtyDirectory=1;
     switch (extent&3)
     {
       case 0: /* first entry */ /*{{{*/
@@ -735,8 +706,24 @@ int cpmReadSuper(struct cpmSuperBlock *d, struct cpmInode *root, const char *for
     return -1;
   }
   /*}}}*/
-  if (d->dev.opened==0) memset(d->dir,0xe5,d->maxdir*32);
-  else if (readPhysDirectory(d)==-1) return -1;
+  if (d->dev.opened==0) /* create empty directory in core */ /*{{{*/
+  {
+    memset(d->dir,0xe5,d->maxdir*32);
+  }
+  /*}}}*/
+  else /* read directory in core */ /*{{{*/
+  {
+    int i,blocks,entry;
+
+    blocks=(d->maxdir*32+d->blksiz-1)/d->blksiz;
+    entry=0;
+    for (i=0; i<blocks; ++i) 
+    {
+      if (readBlock(d,i,(char*)(d->dir+entry),0,-1)==-1) return -1;
+      entry+=(d->blksiz/32);
+    }
+  }
+  /*}}}*/
   alvInit(d);
   if (d->type==CPMFS_DR3) /* read additional superblock information */ /*{{{*/
   {
@@ -1064,12 +1051,12 @@ int cpmUnlink(const struct cpmInode *dir, const char *fname)
   drive=dir->sb;
   if (splitFilename(fname,dir->sb->type,name,extension,&user)==-1) return -1;
   if ((extent=findFileExtent(drive,user,name,extension,0,-1))==-1) return -1;
+  drive->dirtyDirectory=1;
   drive->dir[extent].status=(char)0xe5;
   do
   {
     drive->dir[extent].status=(char)0xe5;
   } while ((extent=findFileExtent(drive,user,name,extension,extent+1,-1))>=0);
-  if (writePhysDirectory(drive)==-1) return -1;
   alvInit(drive);
   return 0;
 }
@@ -1100,11 +1087,11 @@ int cpmRename(const struct cpmInode *dir, const char *old, const char *new)
   }
   do 
   {
+    drive->dirtyDirectory=1;
     drive->dir[extent].status=newuser;
     memcpy7(drive->dir[extent].name, newname, 8);
     memcpy7(drive->dir[extent].ext, newext, 3);
   } while ((extent=findFileExtent(drive,olduser,oldname,oldext,extent+1,-1))!=-1);
-  if (writePhysDirectory(drive)==-1) return -1;
   return 0;
 }
 /*}}}*/
@@ -1402,6 +1389,7 @@ int cpmWrite(struct cpmFile *file, const char *buf, int count)
     }
     /*}}}*/
     /* fill block and write it */ /*{{{*/
+    file->ino->sb->dirtyDirectory=1;
     while (file->pos!=nextblockpos && count)
     {
       buffer[file->pos%blocksize]=*buf++;
@@ -1436,14 +1424,12 @@ int cpmWrite(struct cpmFile *file, const char *buf, int count)
     if (file->pos==nextextpos) findext=1;
     else if (file->pos==nextblockpos) findblock=1;
   }
-  writePhysDirectory(file->ino->sb);
   return got;
 }
 /*}}}*/
 /* cpmClose           -- close                                   */ /*{{{*/
 int cpmClose(struct cpmFile *file)
 {
-  if (file->mode&O_WRONLY) return (writePhysDirectory(file->ino->sb));
   return 0;
 }
 /*}}}*/
@@ -1469,6 +1455,7 @@ int cpmCreat(struct cpmInode *dir, const char *fname, struct cpmInode *ino, mode
   drive=dir->sb;
   if ((extent=findFreeExtent(dir->sb))==-1) return -1;
   ent=dir->sb->dir+extent;
+  drive->dirtyDirectory=1;
   memset(ent,0,32);
   ent->status=user;
   memcpy(ent->name,name,8);
@@ -1481,15 +1468,14 @@ int cpmCreat(struct cpmInode *dir, const char *fname, struct cpmInode *ino, mode
   time(&ino->ctime);
   ino->sb=dir->sb;
   updateTimeStamps(ino,extent);
-  writePhysDirectory(dir->sb);
   return 0;
 }
 /*}}}*/
 /* cpmAttrGet         -- get CP/M attributes                     */ /*{{{*/
 int cpmAttrGet(struct cpmInode *ino, cpm_attr_t *attrib)
 {
-	*attrib = ino->attr;
-	return 0;
+  *attrib = ino->attr;
+  return 0;
 }
 /*}}}*/
 /* cpmAttrSet         -- set CP/M attributes                     */ /*{{{*/
@@ -1505,6 +1491,7 @@ int cpmAttrSet(struct cpmInode *ino, cpm_attr_t attrib)
   drive  = ino->sb;
   extent = ino->ino;
   
+  drive->dirtyDirectory=1;
   /* Strip off existing attribute bits */
   memcpy7(name,      drive->dir[extent].name, 8);
   memcpy7(extension, drive->dir[extent].ext,  3);
@@ -1524,7 +1511,6 @@ int cpmAttrSet(struct cpmInode *ino, cpm_attr_t attrib)
     memcpy(drive->dir[extent].name, name, 8);
     memcpy(drive->dir[extent].ext, extension, 3);
   } while ((extent=findFileExtent(drive, user,name,extension,extent+1,-1))!=-1);
-  if (writePhysDirectory(drive)==-1) return -1;
 
   /* Update the stored (inode) copies of the file attributes and mode */
   ino->attr=attrib;
@@ -1545,14 +1531,28 @@ int cpmChmod(struct cpmInode *ino, mode_t mode)
 }
 /*}}}*/
 /* cpmSync            -- write directory back                    */ /*{{{*/
-int cpmSync(struct cpmSuperBlock *sb)
+int cpmSync(struct cpmSuperBlock *d)
 {
-  return (writePhysDirectory(sb));
+  if (d->dirtyDirectory)
+  {
+    int i,blocks,entry;
+
+    blocks=(d->maxdir*32+d->blksiz-1)/d->blksiz;
+    entry=0;
+    for (i=0; i<blocks; ++i) 
+    {
+      if (writeBlock(d,i,(char*)(d->dir+entry),0,-1)==-1) return -1;
+      entry+=(d->blksiz/32);
+    }
+    d->dirtyDirectory=0;
+  }
+  return 0;
 }
 /*}}}*/
 /* cpmUmount          -- free super block                        */ /*{{{*/
 void cpmUmount(struct cpmSuperBlock *sb)
 {
+  cpmSync(sb);
   free(sb->alv);
   free(sb->skewtab);
   free(sb->dir);
