@@ -116,6 +116,10 @@ static void oldddir(char **dirent, int entries, struct cpmInode *ino)
           {
             tmp=localtime(&statbuf.mtime);
             printf("  %02d-%s-%04d %02d:%02d",tmp->tm_mday,month[tmp->tm_mon],tmp->tm_year+1900,tmp->tm_hour,tmp->tm_min);
+          }
+          else if (statbuf.ctime) printf("                   ");
+          if (statbuf.ctime)
+          {
             tmp=localtime(&statbuf.ctime);
             printf("  %02d-%s-%04d %02d:%02d",tmp->tm_mday,month[tmp->tm_mon],tmp->tm_year+1900,tmp->tm_hour,tmp->tm_min);
           }
@@ -189,10 +193,17 @@ static void old3dir(char **dirent, int entries, struct cpmInode *ino)
           else if (attrib & CPM_ATTR_PWWRITE) printf("Write  ");
           else if (attrib & CPM_ATTR_PWDEL)   printf("Delete "); 
           else printf("None   ");
-          tmp=localtime(&statbuf.mtime);
-          printf("%02d/%02d/%02d %02d:%02d  ",tmp->tm_mon+1,tmp->tm_mday,tmp->tm_year%100,tmp->tm_hour,tmp->tm_min);
-          tmp=localtime(&statbuf.ctime);
-          printf("%02d/%02d/%02d %02d:%02d",tmp->tm_mon+1,tmp->tm_mday,tmp->tm_year%100,tmp->tm_hour,tmp->tm_min);
+          if (statbuf.mtime)
+          {
+            tmp=localtime(&statbuf.mtime);
+            printf("%02d/%02d/%02d %02d:%02d  ",tmp->tm_mon+1,tmp->tm_mday,tmp->tm_year%100,tmp->tm_hour,tmp->tm_min);
+          }
+          else if (statbuf.ctime) printf("                ");
+          if (statbuf.ctime)
+          {
+            tmp=localtime(&statbuf.ctime);
+            printf("%02d/%02d/%02d %02d:%02d",tmp->tm_mon+1,tmp->tm_mday,tmp->tm_year%100,tmp->tm_hour,tmp->tm_min);
+          }
           putchar('\n');
           ++l;
         }

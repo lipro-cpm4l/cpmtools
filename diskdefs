@@ -6,7 +6,7 @@ diskdef ibm-3740
   maxdir 64
   skew 6
   boottrk 2
-  os p2dos
+  os 2.2
 end
 
 diskdef 4mb-hd
@@ -49,6 +49,18 @@ diskdef cpm86-144feat
   tracks 160
   sectrk 18
   blocksize 4096
+  maxdir 256
+  skew 1
+  boottrk 2
+  os 3
+end
+
+# CP/M 86 on 720KB floppies
+diskdef cpm86-720
+  seclen 512
+  tracks 160
+  sectrk 9 
+  blocksize 2048
   maxdir 256
   skew 1
   boottrk 2
@@ -248,12 +260,49 @@ diskdef p112-old
   os 3
 end
 
+diskdef gide-cfa
+  seclen 512
+  tracks 1000
+  sectrk 16
+  blocksize 4096
+  maxdir 1024
+  skew 0
+  boottrk 2
+  os 3
+end
+
+diskdef gide-cfb
+  seclen 512
+  tracks 1000
+  sectrk 16
+  blocksize 4096
+  maxdir 1024
+  skew 0
+  boottrk 0
+# Start of second partition
+  offset 1000trk
+  os 3
+end
+
+# Kaypro II
 diskdef kpii
   seclen 512
   tracks 40
   sectrk 10
   blocksize 1024
-  maxdir 32
+  maxdir 64
+  skew 0
+  boottrk 1
+  os 2.2
+end
+
+# Kayro IV
+diskdef kpiv
+  seclen 512
+  tracks 80
+  sectrk 10
+  blocksize 2048
+  maxdir 64
   skew 0
   boottrk 1
   os 2.2
@@ -367,10 +416,45 @@ end
 
 diskdef rc759
   seclen 1024
-  tracks 160
+  tracks 154
   sectrk 8
   blocksize 2048
   maxdir 512
   boottrk 4
   os 3
+end
+
+# ICL Comet: 40 track 5.25" Single Sided
+#
+diskdef icl-comet-525ss
+   seclen 512
+   tracks 40
+   sectrk 10
+   blocksize 1024
+   maxdir 64
+   skewtab 0,3,6,9,2,5,8,1,4,7
+   boottrk 2
+   os 2.2
+end
+
+diskdef z80pack-hd
+  seclen 128
+  tracks 255
+  sectrk 128
+  blocksize 2048
+  maxdir 1024
+  skew 0
+  boottrk 0
+  os 2.2
+end
+
+diskdef z80pack-hdb
+  seclen 128
+  tracks 256
+  sectrk 16384
+  blocksize 16384
+  maxdir 8192
+  skew 0
+  boottrk 0
+  os 2.2
 end

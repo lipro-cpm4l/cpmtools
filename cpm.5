@@ -1,7 +1,7 @@
 .\" Believe it or not, reportedly there are nroffs which do not know \(en
 .if n .ds en -
 .if t .ds en \(en
-.TH CPM 5 "March 30, 2010" "CP/M tools" "File formats"
+.TH CPM 5 "February 18, 2012" "CP/M tools" "File formats"
 .SH NAME \"{{{roff}}}\"{{{
 cpm \- CP/M disk and file system format
 .\"}}}
@@ -22,7 +22,9 @@ Number of directory entries
 .br
 Logical sector skew
 .br
-Number of reserved system tracks
+Number of reserved system tracks (optional)
+.br
+Offset to start of volume (optional)
 .sp
 .RE
 A block is the smallest allocatable storage unit.  CP/M supports block
@@ -35,6 +37,8 @@ are stored with the given software skew.
 A CP/M disk contains three areas:
 .RS
 .sp
+Volume offset (optional)
+.br
 System tracks (optional)
 .br
 Directory
@@ -47,6 +51,18 @@ disk space, there are non-bootable formats which omit those system tracks.
 The term \fIdisk capacity\fP always excludes the space for system tracks.
 Note that there is no bitmap or list for free blocks.  When accessing a
 drive for the first time, CP/M builds this bitmap in core from the directory.
+.LP
+A hard disk can have the additional notion of a \fIvolume offset\fP to
+locate the start of the drive image (which may or may not have system
+tracks associated with it). The base unit for volume offset is byte
+count from the beginning of the physical disk, but specifiers of
+\fIK\fP, \fIM\fP, \fIT\fP or \fIS\fP may be appended to denote
+kilobytes, megabytes, tracks or sectors.  If provided, a specifier
+must immediately follow the numeric value with no whitespace.  For
+convenience upper and lower case are both accepted and only the first
+letter is significant, thus 2KB, 8MB, 1000trk and 16sec are valid
+values. Offset must appear subsequent to track, sector and sector
+length values.
 .\"}}}
 .SS "Directory entries" \"{{{
 The directory is a sequence of directory entries (also called extents),
@@ -131,6 +147,7 @@ blocksize of 1024 byte with two-byte block pointers is not allowed).
 Rc stores the number of 128 byte records of the last used logical extent.
 Bc stores the number of bytes in the last used record.  The value 0 means
 128 for backward compatibility with CP/M 2.2, which did not support Bc.
+ISX records the number of unused instead of used bytes in Bc.
 .\"}}}
 .LP
 .\"{{{ Al     = allocated blocks
@@ -145,7 +162,7 @@ EOF when it reaches a hole, whereas UNIX returns zero-value bytes, which makes
 holes invisible.
 .\"}}}
 .\"}}}
-.SS "Time stamps" \"{{{
+.SS "Native time stamps" \"{{{
 P2DOS and CP/M Plus support time stamps, which are stored in each fourth
 directory entry.  This entry contains the time stamps for
 the extents using the previous three directory entries.  Note that you
@@ -179,6 +196,42 @@ time stamp.
 1 byte minute in BCD format
 .sp
 .RE
+.\"}}}
+.SS "DateStamper time stamps" \"{{{
+The DateStamper software added functions to the BDOS to manage
+time stamps by allocating a read only file with the name "!!!TIME&.DAT"
+in the very first directory entry, covering the very first data
+blocks.  It contains one entry per directory entry with the
+following structure of 16 bytes:
+.RS
+.sp
+5 bytes create datefield
+.br
+5 bytes access datefield
+.br
+5 bytes modify datefield
+.br
+1 byte checksum
+.sp
+.RE
+The checksum is only used on every 8th entry (last entry in 128-byte
+record) and is the sum of the first 127 bytes of the record.
+Each datefield has this structure:
+.RS
+.sp
+1 byte BCD coded year (no century, so it is sane assuming any year < 70
+means 21st century)
+.br
+1 byte BCD coded month
+.br
+1 byte BCD coded day
+.br
+1 byte BCD coded hour or, if the high bit is set, the high byte of a
+counter for systems without real time clock
+.br
+1 byte BCD coded minute, or the low byte of the counter
+.sp
+.DE
 .\"}}}
 .SS "Disc labels" \"{{{
 CP/M Plus support disc labels, which are stored in an arbitrary directory

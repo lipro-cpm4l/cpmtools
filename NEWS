@@ -1,3 +1,5 @@
-Changes since 2.13:
+Changes since 2.15:
 
-o  Avoid unneccessary directory writes
+*  Various small fixes
+*  Datestamper support
+*  Image offset to access disk slices
