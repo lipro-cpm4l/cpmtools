@@ -24,14 +24,22 @@
 
 #define INTBITS ((int)(sizeof(int)*8))
 
-/* There are four reserved entries: ., .., [passwd] and [label] */
+/* Convert BCD datestamp digits to binary */
+
+#define BCD2BIN(x) ((((x)>>4)&0xf)*10 + ((x)&0xf))
+
+#define BIN2BCD(x) (((((x)/10)&0xf)<<4) + (((x)%10)&0xf))
+
+/* There are four reserved directory entries: ., .., [passwd] and [label].
+The first two of them refer to the same inode. */
 
 #define RESERVED_ENTRIES 4
 
 /* CP/M does not support any kind of inodes, so they are simulated.
-Inode 0-(maxdir-1) are used by files which lowest extent is stored in
-the respective directory entry.  Inode maxdir is the root directory
-and inode maxdir+1 is the passwd file, if any. */
+Inode 0-(maxdir-1) correlate to the lowest extent number (not the first
+extent of the file in the directory) of a file.  Inode maxdir is the
+root directory, inode maxdir+1 is the optional passwd file and inode
+maxdir+2 the optional disk label. */
 
 #define RESERVED_INODES 3
 
@@ -57,7 +65,7 @@ static void memcpy7(char *dest, const char *src, int count)
 
 /* file name conversions */ 
 /* splitFilename      -- split file name into name and extension */ /*{{{*/
-static int splitFilename(const char *fullname, int type, char *name, char *ext, int *user) 
+int splitFilename(const char *fullname, int type, char *name, char *ext, int *user) 
 {
   int i,j;
 
@@ -74,7 +82,7 @@ static int splitFilename(const char *fullname, int type, char *name, char *ext, 
   }
   *user=10*(fullname[0]-'0')+(fullname[1]-'0');
   fullname+=2;
-  if ((fullname[0]=='\0') || (type==CPMFS_DR22 && *user>=16) || (type==CPMFS_P2DOS && *user>=32))
+  if ((fullname[0]=='\0') || *user>=((type&CPMFS_HI_USER) ? 32 : 16))
   {
     boo="illegal CP/M filename";
     return -1;
@@ -193,6 +201,56 @@ static void unix2cpm_time(time_t now, int *days, int *hour, int *min)
   *days += tms->tm_yday+1;
 }
 /*}}}*/
+/* ds2unix_time       -- convert DS to Unix time                 */ /*{{{*/
+static time_t ds2unix_time(const struct dsEntry *entry) 
+{
+  struct tm tms;
+  int yr;
+
+  if (entry->minute==0 &&
+      entry->hour==0 &&
+      entry->day==0 &&
+      entry->month==0 &&
+      entry->year==0) return 0;
+  
+  tms.tm_isdst = -1;
+  tms.tm_sec = 0;
+  tms.tm_min = BCD2BIN( entry->minute );
+  tms.tm_hour = BCD2BIN( entry->hour );
+  tms.tm_mday = BCD2BIN( entry->day );
+  tms.tm_mon = BCD2BIN( entry->month ) - 1;
+  
+  yr = BCD2BIN(entry->year);
+  if (yr<70) yr+=100;
+  tms.tm_year = yr;
+  
+  return mktime(&tms);
+}
+/*}}}*/
+/* unix2ds_time       -- convert Unix to DS time                 */ /*{{{*/
+static void unix2ds_time(time_t now, struct dsEntry *entry) 
+{
+  struct tm *tms;
+  int yr;
+
+  if ( now==0 )
+  {
+    entry->minute=entry->hour=entry->day=entry->month=entry->year = 0;
+  }
+  else
+  {
+    tms=localtime(&now);
+    entry->minute = BIN2BCD( tms->tm_min );
+    entry->hour = BIN2BCD( tms->tm_hour );
+    entry->day = BIN2BCD( tms->tm_mday );
+    entry->month = BIN2BCD( tms->tm_mon + 1 );
+    
+    yr = tms->tm_year;
+    if ( yr>100 ) yr -= 100;
+    entry->year = BIN2BCD( yr );
+  }
+}
+/*}}}*/
 
 /* allocation vector bitmap functions */
 /* alvInit            -- init allocation vector                  */ /*{{{*/
@@ -209,7 +267,7 @@ static void alvInit(const struct cpmSuperBlock *d)
   /*}}}*/
   for (i=0; i<d->maxdir; ++i) /* mark file blocks as used */ /*{{{*/
   {
-    if (d->dir[i].status>=0 && d->dir[i].status<=(d->type==CPMFS_P2DOS ? 31 : 15))
+    if (d->dir[i].status>=0 && d->dir[i].status<=(d->type&CPMFS_HI_USER ? 31 : 15))
     {
 #ifdef CPMFS_DEBUG
       fprintf(stderr,"alvInit: allocate extent %d\n",i);
@@ -332,7 +390,7 @@ static int findFileExtent(const struct cpmSuperBlock *sb, int user, const char *
   {
     if
     (
-      ((unsigned char)sb->dir[start].status)<=(sb->type==CPMFS_P2DOS ? 31 : 15)
+      ((unsigned char)sb->dir[start].status)<=(sb->type&CPMFS_HI_USER ? 31 : 15)
       && (extno==-1 || (EXTENT(sb->dir[start].extnol,sb->dir[start].extnoh)/sb->extents)==(extno/sb->extents))
       && isMatching(user,name,ext,sb->dir[start].status,sb->dir[start].name,sb->dir[start].ext)
     ) return start;
@@ -364,7 +422,7 @@ static void updateTimeStamps(const struct cpmInode *ino, int extent)
 #endif
   unix2cpm_time(ino->sb->cnotatime ? ino->ctime : ino->atime,&ca_days,&ca_hour,&ca_min);
   unix2cpm_time(ino->mtime,&u_days,&u_hour,&u_min);
-  if ((ino->sb->type==CPMFS_P2DOS || ino->sb->type==CPMFS_DR3) && (date=ino->sb->dir+(extent|3))->status==0x21)
+  if ((ino->sb->type&CPMFS_CPM3_DATES) && (date=ino->sb->dir+(extent|3))->status==0x21)
   {
     ino->sb->dirtyDirectory=1;
     switch (extent&3)
@@ -406,157 +464,115 @@ static void updateTimeStamps(const struct cpmInode *ino, int extent)
   }
 }
 /*}}}*/
-
-/* diskdefReadSuper   -- read super block from diskdefs file     */ /*{{{*/
-static int diskdefReadSuper(struct cpmSuperBlock *d, const char *format)
+/* updateDsStamps     -- set time in datestamper file            */ /*{{{*/
+static void updateDsStamps(const struct cpmInode *ino, int extent)
 {
-  char line[256];
-  FILE *fp;
-  int insideDef=0,found=0;
+  int yr;
+  struct tm *cpm_time;
+  struct dsDate *stamp;
+  
+  if (!S_ISREG(ino->mode)) return;
+  if ( !(ino->sb->type&CPMFS_DS_DATES) ) return;
 
-  if ((fp=fopen(DISKDEFS,"r"))==(FILE*)0 && (fp=fopen("diskdefs","r"))==(FILE*)0)
-  {
-    fprintf(stderr,"%s: Neither " DISKDEFS " nor diskdefs could be opened.\n",cmd);
-    exit(1);
-  }
-  while (fgets(line,sizeof(line),fp)!=(char*)0)
-  {
-    int argc;
-    char *argv[2];
+#ifdef CPMFS_DEBUG
+  fprintf(stderr,"CPMFS: updating ds stamps for inode %d (%d)\n",extent,extent&3);
+#endif
+  
+  /* Get datestamp struct */
+  stamp = ino->sb->ds+extent;
+  
+  unix2ds_time( ino->mtime, &stamp->modify );
+  unix2ds_time( ino->ctime, &stamp->create );
+  unix2ds_time( ino->atime, &stamp->access );
 
-    for (argc=0; argc<1 && (argv[argc]=strtok(argc ? (char*)0 : line," \t\n")); ++argc);
-    if ((argv[argc]=strtok((char*)0,"\n"))!=(char*)0) ++argc;
-    if (insideDef)
-    {
-      if (argc==1 && strcmp(argv[0],"end")==0)
-      {
-        insideDef=0;
-        d->size=(d->secLength*d->sectrk*(d->tracks-d->boottrk))/d->blksiz;
-        if (d->extents==0) d->extents=((d->size>=256 ? 8 : 16)*d->blksiz)/16384;
-        if (d->extents==0) d->extents=1;
-        if (found) break;
-      }
-      else if (argc==2)
-      {
-        if (strcmp(argv[0],"seclen")==0) d->secLength=strtol(argv[1],(char**)0,0);
-        else if (strcmp(argv[0],"tracks")==0) d->tracks=strtol(argv[1],(char**)0,0);
-        else if (strcmp(argv[0],"sectrk")==0) d->sectrk=strtol(argv[1],(char**)0,0);
-        else if (strcmp(argv[0],"blocksize")==0) d->blksiz=strtol(argv[1],(char**)0,0);
-        else if (strcmp(argv[0],"maxdir")==0) d->maxdir=strtol(argv[1],(char**)0,0);
-        else if (strcmp(argv[0],"skew")==0) d->skew=strtol(argv[1],(char**)0,0);
-        else if (strcmp(argv[0],"skewtab")==0)
-        {
-          int pass,sectors;
-
-          for (pass=0; pass<2; ++pass)
-          {
-            char *s;
-
-            sectors=0;
-            for (s=argv[1]; *s; )
-            {
-              int phys;
-              char *end;
-
-              phys=strtol(s,&end,10);
-              if (pass==1) d->skewtab[sectors]=phys;
-              if (end==s)
-              {
-                fprintf(stderr,"%s: invalid skewtab `%s' at `%s'\n",cmd,argv[1],s);
-                exit(1);
-              }
-              s=end;
-              ++sectors;
-              if (*s==',') ++s;
-            }
-            if (pass==0) d->skewtab=malloc(sizeof(int)*sectors);
-          }
-        }
-        else if (strcmp(argv[0],"boottrk")==0) d->boottrk=strtol(argv[1],(char**)0,0);
-        else if (strcmp(argv[0],"logicalextents")==0) d->extents=strtol(argv[1],(char**)0,0);
-        else if (strcmp(argv[0],"os")==0)
-        {
-          if (strcmp(argv[1],"2.2")==0) d->type=CPMFS_DR22;
-          else if (strcmp(argv[1],"3")==0) d->type=CPMFS_DR3;
-          else if (strcmp(argv[1],"p2dos")==0) d->type=CPMFS_P2DOS;
-        }
-      }
-      else if (argc>0 && argv[0][0]!='#')
-      {
-        fprintf(stderr,"%s: invalid keyword `%s'\n",cmd,argv[0]);
-        exit(1);
-      }
-    }
-    else if (argc==2 && strcmp(argv[0],"diskdef")==0)
-    {
-      insideDef=1;
-      d->skew=1;
-      d->extents=0;
-      d->type=CPMFS_DR3;
-      d->skewtab=(int*)0;
-      if (strcmp(argv[1],format)==0) found=1;
-    }
-  }
-  fclose(fp);
-  if (!found)
-  {
-    fprintf(stderr,"%s: unknown format %s\n",cmd,format);
-    exit(1);
-  }
-  return 0;
+  ino->sb->dirtyDs = 1;
 }
 /*}}}*/
-/* amsReadSuper       -- read super block from amstrad disk      */ /*{{{*/
-static int amsReadSuper(struct cpmSuperBlock *d, const char *format)
+/* readTimeStamps     -- read CP/M time stamp                    */ /*{{{*/
+static int readTimeStamps(struct cpmInode *i, int lowestExt) 
 {
-  unsigned char boot_sector[512], *boot_spec;
-  const char *err;
+  /* variables */ /*{{{*/
+  struct PhysDirectoryEntry *date;
+  int u_days=0,u_hour=0,u_min=0;
+  int ca_days=0,ca_hour=0,ca_min=0;
+  int protectMode=0;
+  /*}}}*/
+  
+  if ( (i->sb->type&CPMFS_CPM3_DATES) && (date=i->sb->dir+(lowestExt|3))->status==0x21 )
+  {
+    switch (lowestExt&3)
+    {
+      case 0: /* first entry of the four */ /*{{{*/
+      {
+        ca_days=((unsigned char)date->name[0])+(((unsigned char)date->name[1])<<8);
+        ca_hour=(unsigned char)date->name[2];
+        ca_min=(unsigned char)date->name[3];
+        u_days=((unsigned char)date->name[4])+(((unsigned char)date->name[5])<<8);
+        u_hour=(unsigned char)date->name[6];
+        u_min=(unsigned char)date->name[7];
+        protectMode=(unsigned char)date->ext[0];
+        break;
+      }
+      /*}}}*/
+      case 1: /* second entry */ /*{{{*/
+      {
+        ca_days=((unsigned char)date->ext[2])+(((unsigned char)date->extnol)<<8);
+        ca_hour=(unsigned char)date->lrc;
+        ca_min=(unsigned char)date->extnoh;
+        u_days=((unsigned char)date->blkcnt)+(((unsigned char)date->pointers[0])<<8);
+        u_hour=(unsigned char)date->pointers[1];
+        u_min=(unsigned char)date->pointers[2];
+        protectMode=(unsigned char)date->pointers[3];
+        break;
+      }
+      /*}}}*/
+      case 2: /* third one */ /*{{{*/
+      {
+        ca_days=((unsigned char)date->pointers[5])+(((unsigned char)date->pointers[6])<<8);
+        ca_hour=(unsigned char)date->pointers[7];
+        ca_min=(unsigned char)date->pointers[8];
+        u_days=((unsigned char)date->pointers[9])+(((unsigned char)date->pointers[10])<<8);
+        u_hour=(unsigned char)date->pointers[11];
+        u_min=(unsigned char)date->pointers[12];
+        protectMode=(unsigned char)date->pointers[13];
+        break;
+      }
+      /*}}}*/
+    }
+    if (i->sb->cnotatime)
+    {
+      i->ctime=cpm2unix_time(ca_days,ca_hour,ca_min);
+      i->atime=0;
+    }
+    else
+    {
+      i->ctime=0;
+      i->atime=cpm2unix_time(ca_days,ca_hour,ca_min);
+    }
+    i->mtime=cpm2unix_time(u_days,u_hour,u_min);
+  }
+  else
+  {
+    i->atime=i->mtime=i->ctime=0;
+    protectMode=0;
+  }
+  
+  return protectMode;
+}
+/*}}}*/
+/* readDsStamps       -- read datestamper time stamp             */ /*{{{*/
+static void readDsStamps(struct cpmInode *i, int lowestExt) 
+{
+  struct dsDate *stamp;
+  
+  if ( !(i->sb->type&CPMFS_DS_DATES) ) return;
 
-  Device_setGeometry(&d->dev,512,9,40);
-  if ((err=Device_readSector(&d->dev, 0, 0, (char *)boot_sector)))
-  {
-    fprintf(stderr,"%s: Failed to read Amstrad superblock (%s)\n",cmd,err);
-    exit(1);
-  }
-  boot_spec=(boot_sector[0] == 0 || boot_sector[0] == 3)?boot_sector:(unsigned char*)0;
-  /* Check for JCE's extension to allow Amstrad and MSDOS superblocks
-   * in the same sector (for the PCW16)
-   */
-  if
-  (
-    (boot_sector[0] == 0xE9 || boot_sector[0] == 0xEB)
-    && !memcmp(boot_sector + 0x2B, "CP/M", 4)
-    && !memcmp(boot_sector + 0x33, "DSK",  3)
-    && !memcmp(boot_sector + 0x7C, "CP/M", 4)
-  ) boot_spec = boot_sector + 128;
-  if (boot_spec==(unsigned char*)0)
-  {
-    fprintf(stderr,"%s: Amstrad superblock not present\n",cmd);
-    exit(1);
-  }
-  /* boot_spec[0] = format number: 0 for SS SD, 3 for DS DD
-              [1] = single/double sided and density flags
-              [2] = cylinders per side
-              [3] = sectors per cylinder
-              [4] = Physical sector shift, 2 => 512
-              [5] = Reserved track count
-              [6] = Block shift
-              [7] = No. of directory blocks
-   */
-  d->type = CPMFS_DR3;	/* Amstrads are CP/M 3 systems */
-  d->secLength = 128 << boot_spec[4];
-  d->tracks    = boot_spec[2];
-  if (boot_spec[1] & 3) d->tracks *= 2;
-  d->sectrk    = boot_spec[3];
-  d->blksiz    = 128 << boot_spec[6];
-  d->maxdir    = (d->blksiz / 32) * boot_spec[7];
-  d->skew      = 1; /* Amstrads skew at the controller level */
-  d->skewtab   = (int*)0;
-  d->boottrk   = boot_spec[5];
-  d->size      = (d->secLength*d->sectrk*(d->tracks-d->boottrk))/d->blksiz;
-  d->extents   = ((d->size>=256 ? 8 : 16)*d->blksiz)/16384;
- 
-  return 0;
+  /* Get datestamp */
+  stamp = i->sb->ds+lowestExt;
+  
+  i->mtime = ds2unix_time(&stamp->modify);
+  i->ctime = ds2unix_time(&stamp->create);
+  i->atime = ds2unix_time(&stamp->access);
 }
 /*}}}*/
 
@@ -636,27 +652,300 @@ void cpmglob(int optin, int argc, char * const argv[], struct cpmInode *root, in
         ++found;
       }
     }
-    if (found==0)
-    {
-      char pat[255];
-      char *pattern=argv[i];
-      int user;
-
-      if (isdigit(*pattern) && *(pattern+1)==':') { user=(*pattern-'0'); pattern+=2; }
-      else if (isdigit(*pattern) && isdigit(*(pattern+1)) && *(pattern+2)==':') { user=(10*(*pattern-'0')+(*(pattern+1)-'0')); pattern+=3; }
-      else user=-1;
-      if (user==-1) sprintf(pat,"??%s",pattern);
-      else sprintf(pat,"%02d%s",user,pattern);
-
-      if (*gargc==gargcap) *gargv=realloc(*gargv,sizeof(char*)*(gargcap ? (gargcap*=2) : (gargcap=16)));
-      (*gargv)[*gargc]=strcpy(malloc(strlen(pat)+1),pat);
-      ++*gargc;
-    }
   }
   free(dirent);
 }
 /*}}}*/
 
+/* superblock management */
+/* diskdefReadSuper   -- read super block from diskdefs file     */ /*{{{*/
+static int diskdefReadSuper(struct cpmSuperBlock *d, const char *format)
+{
+  char line[256];
+  FILE *fp;
+  int insideDef=0,found=0;
+
+  d->type=0;
+  if ((fp=fopen("diskdefs","r"))==(FILE*)0 && (fp=fopen(DISKDEFS,"r"))==(FILE*)0)
+  {
+    fprintf(stderr,"%s: Neither `diskdefs' nor `" DISKDEFS "' could be opened.\n",cmd);
+    exit(1);
+  }
+  while (fgets(line,sizeof(line),fp)!=(char*)0)
+  {
+    int argc;
+    char *argv[2];
+
+    for (argc=0; argc<1 && (argv[argc]=strtok(argc ? (char*)0 : line," \t\n")); ++argc);
+    if ((argv[argc]=strtok((char*)0,"\n"))!=(char*)0) ++argc;
+    if (insideDef)
+    {
+      if (argc==1 && strcmp(argv[0],"end")==0)
+      {
+        insideDef=0;
+        d->size=(d->secLength*d->sectrk*(d->tracks-d->boottrk))/d->blksiz;
+        if (d->extents==0) d->extents=((d->size>=256 ? 8 : 16)*d->blksiz)/16384;
+        if (d->extents==0) d->extents=1;
+        if (found) break;
+      }
+      else if (argc==2)
+      {
+        if (strcmp(argv[0],"seclen")==0) d->secLength=strtol(argv[1],(char**)0,0);
+        else if (strcmp(argv[0],"tracks")==0) d->tracks=strtol(argv[1],(char**)0,0);
+        else if (strcmp(argv[0],"sectrk")==0) d->sectrk=strtol(argv[1],(char**)0,0);
+        else if (strcmp(argv[0],"blocksize")==0) d->blksiz=strtol(argv[1],(char**)0,0);
+        else if (strcmp(argv[0],"maxdir")==0) d->maxdir=strtol(argv[1],(char**)0,0);
+        else if (strcmp(argv[0],"skew")==0) d->skew=strtol(argv[1],(char**)0,0);
+        else if (strcmp(argv[0],"skewtab")==0)
+        {
+          int pass,sectors;
+
+          for (pass=0; pass<2; ++pass)
+          {
+            char *s;
+
+            sectors=0;
+            for (s=argv[1]; *s; )
+            {
+              int phys;
+              char *end;
+
+              phys=strtol(s,&end,10);
+              if (pass==1) d->skewtab[sectors]=phys;
+              if (end==s)
+              {
+                fprintf(stderr,"%s: invalid skewtab `%s' at `%s'\n",cmd,argv[1],s);
+                exit(1);
+              }
+              s=end;
+              ++sectors;
+              if (*s==',') ++s;
+            }
+            if (pass==0) d->skewtab=malloc(sizeof(int)*sectors);
+          }
+        }
+        else if (strcmp(argv[0],"boottrk")==0) d->boottrk=strtol(argv[1],(char**)0,0);
+        else if (strcmp(argv[0],"offset")==0)  
+        {
+          off_t val;
+          unsigned int multiplier;
+          char *endptr;
+
+          errno=0;
+          multiplier=1;
+          val = strtoul(argv[1],&endptr,10);
+          if ((errno==ERANGE && val==ULONG_MAX)||(errno!=0 && val==0))
+          {
+            fprintf(stderr,"%s: invalid offset value \"%s\" - %s\n",cmd,argv[1],strerror(errno));
+            exit(1);
+          }
+          if (endptr==argv[1])
+          {
+            fprintf(stderr,"%s: offset value \"%s\" is not a number\n",cmd,argv[1]);
+            exit(1);
+          }
+          if (*endptr!='\0')
+          {
+            /* Have a unit specifier */
+            switch (toupper(*endptr))
+            {
+            case 'K':
+              multiplier=1024;
+              break;
+            case 'M':
+              multiplier=1024*1024;
+              break;
+            case 'T':
+              if (d->sectrk<0||d->tracks<0||d->secLength<0)
+              {
+                fprintf(stderr,"%s: offset must be specified after sectrk, tracks and secLength\n",cmd);
+                exit(1);
+              }
+              multiplier=d->sectrk*d->secLength;
+              break;
+            case 'S':
+              if (d->sectrk<0||d->tracks<0||d->secLength<0)
+              {
+                fprintf(stderr,"%s: offset must be specified after sectrk, tracks and secLength\n",cmd);
+                exit(1);
+              }
+              multiplier=d->secLength;
+              break;
+            default:
+              fprintf(stderr,"%s: unknown unit specifier \"%c\"\n",cmd,*endptr);
+              exit(1);
+            }
+          }
+          if (val*multiplier>INT_MAX)
+          {
+            fprintf(stderr,"%s: effective offset is out of range\n",cmd);
+            exit(1);
+          }
+          d->offset=val*multiplier;
+        }
+        else if (strcmp(argv[0],"logicalextents")==0) d->extents=strtol(argv[1],(char**)0,0);
+        else if (strcmp(argv[0],"os")==0)
+        {
+          if      (strcmp(argv[1],"2.2"  )==0) d->type|=CPMFS_DR22;
+          else if (strcmp(argv[1],"3"    )==0) d->type|=CPMFS_DR3;
+          else if (strcmp(argv[1],"isx"  )==0) d->type|=CPMFS_ISX;
+          else if (strcmp(argv[1],"p2dos")==0) d->type|=CPMFS_P2DOS;
+          else if (strcmp(argv[1],"zsys" )==0) d->type|=CPMFS_ZSYS;
+          else 
+          {
+            fprintf(stderr, "%s: invalid OS type `%s'\n", cmd, argv[1]);
+            exit(1);
+          }
+        }
+      }
+      else if (argc>0 && argv[0][0]!='#')
+      {
+        fprintf(stderr,"%s: invalid keyword `%s'\n",cmd,argv[0]);
+        exit(1);
+      }
+    }
+    else if (argc==2 && strcmp(argv[0],"diskdef")==0)
+    {
+      insideDef=1;
+      d->skew=1;
+      d->extents=0;
+      d->type|=CPMFS_DR3;
+      d->skewtab=(int*)0;
+      d->offset=0;
+      d->boottrk=d->secLength=d->sectrk=d->tracks=-1;
+      if (strcmp(argv[1],format)==0) found=1;
+    }
+  }
+  fclose(fp);
+  if (!found)
+  {
+    fprintf(stderr,"%s: unknown format %s\n",cmd,format);
+    exit(1);
+  }
+  if (d->boottrk<0)
+  {
+    fprintf(stderr, "%s: boottrk parameter invalid or missing from diskdef\n",cmd);
+    exit(1);
+  }
+  if (d->secLength<0)
+  {
+    fprintf(stderr, "%s: secLength parameter invalid or missing from diskdef\n",cmd);
+    exit(1);
+  }
+  if (d->sectrk<0)
+  {
+    fprintf(stderr, "%s: sectrk parameter invalid or missing from diskdef\n",cmd);
+    exit(1);
+  }
+  if (d->tracks<0)
+  {
+    fprintf(stderr, "%s: tracks parameter invalid or missing from diskdef\n",cmd);
+    exit(1);
+  }
+  return 0;
+}
+/*}}}*/
+/* amsReadSuper       -- read super block from amstrad disk      */ /*{{{*/
+static int amsReadSuper(struct cpmSuperBlock *d, const char *format)
+{
+  unsigned char boot_sector[512], *boot_spec;
+  const char *err;
+
+  Device_setGeometry(&d->dev,512,9,40,0);
+  if ((err=Device_readSector(&d->dev, 0, 0, (char *)boot_sector)))
+  {
+    fprintf(stderr,"%s: Failed to read Amstrad superblock (%s)\n",cmd,err);
+    exit(1);
+  }
+  boot_spec=(boot_sector[0] == 0 || boot_sector[0] == 3)?boot_sector:(unsigned char*)0;
+  /* Check for JCE's extension to allow Amstrad and MSDOS superblocks
+   * in the same sector (for the PCW16)
+   */
+  if
+  (
+    (boot_sector[0] == 0xE9 || boot_sector[0] == 0xEB)
+    && !memcmp(boot_sector + 0x2B, "CP/M", 4)
+    && !memcmp(boot_sector + 0x33, "DSK",  3)
+    && !memcmp(boot_sector + 0x7C, "CP/M", 4)
+  ) boot_spec = boot_sector + 128;
+  if (boot_spec==(unsigned char*)0)
+  {
+    fprintf(stderr,"%s: Amstrad superblock not present\n",cmd);
+    exit(1);
+  }
+  /* boot_spec[0] = format number: 0 for SS SD, 3 for DS DD
+              [1] = single/double sided and density flags
+              [2] = cylinders per side
+              [3] = sectors per cylinder
+              [4] = Physical sector shift, 2 => 512
+              [5] = Reserved track count
+              [6] = Block shift
+              [7] = No. of directory blocks
+   */
+  d->type = 0;
+  d->type |= CPMFS_DR3;	/* Amstrads are CP/M 3 systems */
+  d->secLength = 128 << boot_spec[4];
+  d->tracks    = boot_spec[2];
+  if (boot_spec[1] & 3) d->tracks *= 2;
+  d->sectrk    = boot_spec[3];
+  d->blksiz    = 128 << boot_spec[6];
+  d->maxdir    = (d->blksiz / 32) * boot_spec[7];
+  d->skew      = 1; /* Amstrads skew at the controller level */
+  d->skewtab   = (int*)0;
+  d->boottrk   = boot_spec[5];
+  d->offset    = 0;
+  d->size      = (d->secLength*d->sectrk*(d->tracks-d->boottrk))/d->blksiz;
+  d->extents   = ((d->size>=256 ? 8 : 16)*d->blksiz)/16384;
+ 
+  return 0;
+}
+/*}}}*/
+/* cpmCheckDs         -- read all datestamper timestamps         */ /*{{{*/
+int cpmCheckDs(struct cpmSuperBlock *sb)
+{
+  int dsoffset, dsblks, dsrecs, off, i;
+  unsigned char *buf;
+
+  if (!isMatching(0,"!!!TIME&","DAT",sb->dir->status,sb->dir->name,sb->dir->ext)) return -1;
+
+  /* Offset to ds file in alloc blocks */
+  dsoffset=(sb->maxdir*32+(sb->blksiz-1))/sb->blksiz;
+
+  dsrecs=(sb->maxdir+7)/8;
+  dsblks=(dsrecs*128+(sb->blksiz-1))/sb->blksiz;
+
+  /* Allocate buffer */
+  sb->ds=malloc(dsblks*sb->blksiz);
+
+  /* Read ds file in its entirety */
+  off=0;
+  for (i=dsoffset; i<dsoffset+dsblks; i++)
+  {
+    if (readBlock(sb,i,((char*)sb->ds)+off,0,-1)==-1) return -1;
+    off+=sb->blksiz;
+  }
+
+  /* Verify checksums */
+  buf = (unsigned char *)sb->ds;
+  for (i=0; i<dsrecs; i++)
+  {
+    unsigned cksum, j;
+    cksum=0;
+    for (j=0; j<127; j++) cksum += buf[j];
+    if (buf[j]!=(cksum&0xff))
+    {
+#ifdef CPMFS_DEBUG
+      fprintf( stderr, "!!!TIME&.DAT file failed cksum at record %i\n", i );
+#endif
+      free(sb->ds);
+      sb->ds = (struct dsDate *)0;
+      return -1;
+    }
+    buf += 128;
+  }
+  return 0;
+}
+/*}}}*/
 /* cpmReadSuper       -- get DPB and init in-core data for drive */ /*{{{*/
 int cpmReadSuper(struct cpmSuperBlock *d, struct cpmInode *root, const char *format)
 {
@@ -666,7 +955,7 @@ int cpmReadSuper(struct cpmSuperBlock *d, struct cpmInode *root, const char *for
   assert(s_ifreg);
   if (strcmp(format, "amstrad")==0) amsReadSuper(d,format);
   else diskdefReadSuper(d,format);
-  Device_setGeometry(&d->dev,d->secLength,d->sectrk,d->tracks);
+  Device_setGeometry(&d->dev,d->secLength,d->sectrk,d->tracks,d->offset);
   if (d->skewtab==(int*)0) /* generate skew table */ /*{{{*/
   {
     int	i,j,k;
@@ -725,7 +1014,7 @@ int cpmReadSuper(struct cpmSuperBlock *d, struct cpmInode *root, const char *for
   }
   /*}}}*/
   alvInit(d);
-  if (d->type==CPMFS_DR3) /* read additional superblock information */ /*{{{*/
+  if (d->type&CPMFS_CPM3_OTHER) /* read additional superblock information */ /*{{{*/
   {
     int i;
 
@@ -805,21 +1094,91 @@ int cpmReadSuper(struct cpmSuperBlock *d, struct cpmInode *root, const char *for
     d->labelLength=0;
   }
   d->root=root;
+  d->dirtyDirectory = 0;
   root->ino=d->maxdir;
   root->sb=d;
   root->mode=(s_ifdir|0777);
   root->size=0;
   root->atime=root->mtime=root->ctime=0;
+
+  d->dirtyDs=0;
+  if (cpmCheckDs(d)==0) d->type|=CPMFS_DS_DATES;
+  else d->ds=(struct dsDate*)0;
+
   return 0;
 }
 /*}}}*/
+/* syncDs             -- write all datestamper timestamps        */ /*{{{*/
+static int syncDs(const struct cpmSuperBlock *sb)
+{
+  if (sb->dirtyDs)
+  {
+    int dsoffset, dsblks, dsrecs, off, i;
+    unsigned char *buf;
+    
+    dsrecs=(sb->maxdir+7)/8;
+
+    /* Re-calculate checksums */
+    buf = (unsigned char *)sb->ds;
+    for ( i=0; i<dsrecs; i++ )
+    {
+      unsigned cksum, j;
+      cksum=0;
+      for ( j=0; j<127; j++ ) cksum += buf[j];
+      buf[j] = cksum & 0xff;
+      buf += 128;
+    }
+    dsoffset=(sb->maxdir*32+(sb->blksiz-1))/sb->blksiz;
+    dsblks=(dsrecs*128+(sb->blksiz-1))/sb->blksiz;
+
+    off=0;
+    for (i=dsoffset; i<dsoffset+dsblks; i++)
+    {
+      if (writeBlock(sb,i,((char*)(sb->ds))+off,0,-1)==-1) return -1;
+      off+=sb->blksiz;
+    }
+  }
+  return 0;
+}
+/*}}}*/
+/* cpmSync            -- write directory back                    */ /*{{{*/
+int cpmSync(struct cpmSuperBlock *sb)
+{
+  if (sb->dirtyDirectory)
+  {
+    int i,blocks,entry;
+
+    blocks=(sb->maxdir*32+sb->blksiz-1)/sb->blksiz;
+    entry=0;
+    for (i=0; i<blocks; ++i) 
+    {
+      if (writeBlock(sb,i,(char*)(sb->dir+entry),0,-1)==-1) return -1;
+      entry+=(sb->blksiz/32);
+    }
+    sb->dirtyDirectory=0;
+  }
+  if (sb->type&CPMFS_DS_DATES) syncDs(sb);
+  return 0;
+}
+/*}}}*/
+/* cpmUmount          -- free super block                        */ /*{{{*/
+void cpmUmount(struct cpmSuperBlock *sb)
+{
+  cpmSync(sb);
+  if (sb->type&CPMFS_DS_DATES) free(sb->ds);
+  free(sb->alv);
+  free(sb->skewtab);
+  free(sb->dir);
+  if (sb->passwdLength) free(sb->passwd);
+}
+/*}}}*/
+
 /* cpmNamei           -- map name to inode                       */ /*{{{*/
 int cpmNamei(const struct cpmInode *dir, const char *filename, struct cpmInode *i)
 {
   /* variables */ /*{{{*/
   int user;
   char name[8],extension[3];
-  struct PhysDirectoryEntry *date;
   int highestExtno,highestExt=-1,lowestExtno,lowestExt=-1;
   int protectMode=0;
   /*}}}*/
@@ -898,7 +1257,14 @@ int cpmNamei(const struct cpmInode *dir, const char *filename, struct cpmInode *
       if (dir->sb->dir[highestExt].pointers[2*block] || dir->sb->dir[highestExt].pointers[2*block+1]) break;
     }
     if (dir->sb->dir[highestExt].blkcnt) i->size+=((dir->sb->dir[highestExt].blkcnt&0xff)-1)*128;
-    i->size+=dir->sb->dir[highestExt].lrc ? (dir->sb->dir[highestExt].lrc&0xff) : 128;
+    if (dir->sb->type & CPMFS_ISX)
+    {
+      i->size += (128 - dir->sb->dir[highestExt].lrc);
+    }
+    else
+    {
+      i->size+=dir->sb->dir[highestExt].lrc ? (dir->sb->dir[highestExt].lrc&0xff) : 128;
+    }
 #ifdef CPMFS_DEBUG
     fprintf(stderr,"cpmNamei: size=%ld\n",(long)i->size);
 #endif
@@ -907,70 +1273,9 @@ int cpmNamei(const struct cpmInode *dir, const char *filename, struct cpmInode *
   i->ino=lowestExt;
   i->mode=s_ifreg;
   i->sb=dir->sb;
-  /* set timestamps */ /*{{{*/
-  if 
-  (
-    (dir->sb->type==CPMFS_P2DOS || dir->sb->type==CPMFS_DR3)
-    && (date=dir->sb->dir+(lowestExt|3))->status==0x21
-  )
-  {
-    /* variables */ /*{{{*/
-    int u_days=0,u_hour=0,u_min=0;
-    int ca_days=0,ca_hour=0,ca_min=0;
-    /*}}}*/
 
-    switch (lowestExt&3)
-    {
-      case 0: /* first entry of the four */ /*{{{*/
-      {
-        ca_days=((unsigned char)date->name[0])+(((unsigned char)date->name[1])<<8);
-        ca_hour=(unsigned char)date->name[2];
-        ca_min=(unsigned char)date->name[3];
-        u_days=((unsigned char)date->name[4])+(((unsigned char)date->name[5])<<8);
-        u_hour=(unsigned char)date->name[6];
-        u_min=(unsigned char)date->name[7];
-	protectMode=(unsigned char)date->ext[0];
-        break;
-      }
-      /*}}}*/
-      case 1: /* second entry */ /*{{{*/
-      {
-        ca_days=((unsigned char)date->ext[2])+(((unsigned char)date->extnol)<<8);
-        ca_hour=(unsigned char)date->lrc;
-        ca_min=(unsigned char)date->extnoh;
-        u_days=((unsigned char)date->blkcnt)+(((unsigned char)date->pointers[0])<<8);
-        u_hour=(unsigned char)date->pointers[1];
-        u_min=(unsigned char)date->pointers[2];
-        protectMode=(unsigned char)date->pointers[3];
-        break;
-      }
-      /*}}}*/
-      case 2: /* third one */ /*{{{*/
-      {
-        ca_days=((unsigned char)date->pointers[5])+(((unsigned char)date->pointers[6])<<8);
-        ca_hour=(unsigned char)date->pointers[7];
-        ca_min=(unsigned char)date->pointers[8];
-        u_days=((unsigned char)date->pointers[9])+(((unsigned char)date->pointers[10])<<8);
-        u_hour=(unsigned char)date->pointers[11];
-        u_min=(unsigned char)date->pointers[12];
-        protectMode=(unsigned char)date->pointers[13];
-        break;
-      }
-      /*}}}*/
-    }
-    if (i->sb->cnotatime)
-    {
-      i->ctime=cpm2unix_time(ca_days,ca_hour,ca_min);
-      i->atime=0;
-    }
-    else
-    {
-      i->ctime=0;
-      i->atime=cpm2unix_time(ca_days,ca_hour,ca_min);
-    }
-    i->mtime=cpm2unix_time(u_days,u_hour,u_min);
-  }
-  else i->atime=i->mtime=i->ctime=0;
+  /* read timestamps */ /*{{{*/
+  protectMode = readTimeStamps(i,lowestExt);
   /*}}}*/
 
   /* Determine the inode attributes */
@@ -990,6 +1295,9 @@ int cpmNamei(const struct cpmInode *dir, const char *filename, struct cpmInode *
   i->mode|=0444;
   if (!(dir->sb->dir[lowestExt].ext[0]&0x80)) i->mode|=0222;
   if (extension[0]=='C' && extension[1]=='O' && extension[2]=='M') i->mode|=0111;
+
+  readDsStamps(i,lowestExt);
+  
   return 0;
 }
 /*}}}*/
@@ -1001,7 +1309,7 @@ void cpmStatFS(const struct cpmInode *ino, struct cpmStatFS *buf)
 
   d=ino->sb;
   buf->f_bsize=d->blksiz;
-  buf->f_blocks=(d->tracks*d->sectrk*d->secLength)/d->blksiz;
+  buf->f_blocks=d->size;
   buf->f_bfree=0;
   buf->f_bused=-(d->maxdir*32+d->blksiz-1)/d->blksiz;
   for (i=0; i<d->alvSize; ++i)
@@ -1178,7 +1486,7 @@ int cpmReaddir(struct cpmFile *dir, struct cpmDirent *ent)
     {
       int first=dir->pos-RESERVED_ENTRIES;
 
-      if ((cur=dir->ino->sb->dir+(dir->pos-RESERVED_ENTRIES))->status>=0 && cur->status<=(dir->ino->sb->type==CPMFS_P2DOS ? 31 : 15))
+      if ((cur=dir->ino->sb->dir+(dir->pos-RESERVED_ENTRIES))->status>=0 && cur->status<=(dir->ino->sb->type&CPMFS_HI_USER ? 31 : 15))
       {
         /* determine first extent for the current file */ /*{{{*/
         for (i=0; i<dir->ino->sb->maxdir; ++i) if (i!=(dir->pos-RESERVED_ENTRIES))
@@ -1354,7 +1662,9 @@ int cpmWrite(struct cpmFile *file, const char *buf, int count)
         file->ino->sb->dir[extent].extnoh=EXTENTH(extentno);
         file->ino->sb->dir[extent].blkcnt=0;
         file->ino->sb->dir[extent].lrc=0;
+        time(&file->ino->ctime);
         updateTimeStamps(file->ino,extent);
+        updateDsStamps(file->ino,extent);
       }
       findext=0;
       findblock=1;
@@ -1374,6 +1684,9 @@ int cpmWrite(struct cpmFile *file, const char *buf, int count)
         start=0;
         end=(blocksize-1)/file->ino->sb->secLength;
         memset(buffer,0,blocksize);
+        time(&file->ino->ctime);
+        updateTimeStamps(file->ino,extent);
+        updateDsStamps(file->ino,extent);
       }
       /*}}}*/
       else /* read existing block and set start/end to cover modified parts */ /*{{{*/
@@ -1399,6 +1712,7 @@ int cpmWrite(struct cpmFile *file, const char *buf, int count)
       --count;
     }
     (void)writeBlock(file->ino->sb,block,buffer,start,end);
+    time(&file->ino->mtime);
     if (file->ino->sb->size<256) for (last=15; last>=0; --last)
     {
       if (file->ino->sb->dir[extent].pointers[last])
@@ -1418,8 +1732,16 @@ int cpmWrite(struct cpmFile *file, const char *buf, int count)
     file->ino->sb->dir[extent].extnol=EXTENTL(extentno);
     file->ino->sb->dir[extent].extnoh=EXTENTH(extentno);
     file->ino->sb->dir[extent].blkcnt=((file->pos-1)%16384)/128+1;
-    file->ino->sb->dir[extent].lrc=file->pos%128;
+    if (file->ino->sb->type & CPMFS_EXACT_SIZE)
+    {
+      file->ino->sb->dir[extent].lrc = (128 - (file->pos%128)) & 0x7F;
+    }
+    else
+    {
+      file->ino->sb->dir[extent].lrc=file->pos%128;
+    }
     updateTimeStamps(file->ino,extent);
+    updateDsStamps(file->ino,extent);
     /*}}}*/
     if (file->pos==nextextpos) findext=1;
     else if (file->pos==nextblockpos) findblock=1;
@@ -1463,14 +1785,17 @@ int cpmCreat(struct cpmInode *dir, const char *fname, struct cpmInode *ino, mode
   ino->ino=extent;
   ino->mode=s_ifreg|mode;
   ino->size=0;
+
   time(&ino->atime);
   time(&ino->mtime);
   time(&ino->ctime);
   ino->sb=dir->sb;
   updateTimeStamps(ino,extent);
+  updateDsStamps(ino,extent);
   return 0;
 }
 /*}}}*/
+
 /* cpmAttrGet         -- get CP/M attributes                     */ /*{{{*/
 int cpmAttrGet(struct cpmInode *ino, cpm_attr_t *attrib)
 {
@@ -1523,39 +1848,20 @@ int cpmAttrSet(struct cpmInode *ino, cpm_attr_t attrib)
 /* cpmChmod           -- set CP/M r/o & sys                      */ /*{{{*/
 int cpmChmod(struct cpmInode *ino, mode_t mode)
 {
-	/* Convert the chmod() into a chattr() call that affects RO */
-	int newatt = ino->attr & ~CPM_ATTR_RO;
+  /* Convert the chmod() into a chattr() call that affects RO */
+  int newatt = ino->attr & ~CPM_ATTR_RO;
 
-	if (!(mode & (S_IWUSR|S_IWGRP|S_IWOTH))) newatt |= CPM_ATTR_RO;
-	return cpmAttrSet(ino, newatt);
+  if (!(mode & (S_IWUSR|S_IWGRP|S_IWOTH))) newatt |= CPM_ATTR_RO;
+  return cpmAttrSet(ino, newatt);
 }
 /*}}}*/
-/* cpmSync            -- write directory back                    */ /*{{{*/
-int cpmSync(struct cpmSuperBlock *d)
+/* cpmUtime           -- set timestamps                          */ /*{{{*/
+void cpmUtime(struct cpmInode *ino, struct utimbuf *times)
 {
-  if (d->dirtyDirectory)
-  {
-    int i,blocks,entry;
-
-    blocks=(d->maxdir*32+d->blksiz-1)/d->blksiz;
-    entry=0;
-    for (i=0; i<blocks; ++i) 
-    {
-      if (writeBlock(d,i,(char*)(d->dir+entry),0,-1)==-1) return -1;
-      entry+=(d->blksiz/32);
-    }
-    d->dirtyDirectory=0;
-  }
-  return 0;
-}
-/*}}}*/
-/* cpmUmount          -- free super block                        */ /*{{{*/
-void cpmUmount(struct cpmSuperBlock *sb)
-{
-  cpmSync(sb);
-  free(sb->alv);
-  free(sb->skewtab);
-  free(sb->dir);
-  if (sb->passwdLength) free(sb->passwd);
+  ino->atime = times->actime;
+  ino->mtime = times->modtime;
+  time(&ino->ctime);
+  updateTimeStamps(ino,ino->ino);
+  updateDsStamps(ino,ino->ino);
 }
 /*}}}*/
