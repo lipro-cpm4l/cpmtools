@@ -22,11 +22,12 @@ const char *Device_open(struct Device *this, const char *filename, int mode, con
 }
 /*}}}*/
 /* Device_setGeometry    -- Set disk geometry                       */ /*{{{*/
-void Device_setGeometry(struct Device *this, int secLength, int sectrk, int tracks)
+void Device_setGeometry(struct Device *this, int secLength, int sectrk, int tracks, off_t offset)
 {
   this->secLength=secLength;
   this->sectrk=sectrk;
   this->tracks=tracks;
+  this->offset=offset;
 }
 /*}}}*/
 /* Device_close          -- Close an image file                     */ /*{{{*/
@@ -45,7 +46,7 @@ const char *Device_readSector(const struct Device *this, int track, int sector, 
   assert(sector<this->sectrk);
   assert(track>=0);
   assert(track<this->tracks);
-  if (lseek(this->fd,(off_t)(sector+track*this->sectrk)*this->secLength,SEEK_SET)==-1) 
+  if (lseek(this->fd,(off_t)(((sector+track*this->sectrk)*this->secLength)+this->offset),SEEK_SET)==-1) 
   {
     return strerror(errno);
   }
@@ -67,7 +68,7 @@ const char *Device_writeSector(const struct Device *this, int track, int sector,
   assert(sector<this->sectrk);
   assert(track>=0);
   assert(track<this->tracks);
-  if (lseek(this->fd,(off_t)(sector+track*this->sectrk)*this->secLength, SEEK_SET)==-1)
+  if (lseek(this->fd,(off_t)(((sector+track*this->sectrk)*this->secLength)+this->offset),SEEK_SET)==-1)
   {
     return strerror(errno);
   }

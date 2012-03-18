@@ -80,6 +80,8 @@ fsck.test:	fsck.cpm
 		-./fsck.cpm -f pcw -n badfs/label
 
 install:	all
+		[ -d $(MANDIR)/man1 ] || $(INSTALL) -m 755 -d $(MANDIR)/man1
+		[ -d $(MANDIR)/man5 ] || $(INSTALL) -m 755 -d $(MANDIR)/man5
 		$(INSTALL) -s -m 755 cpmls $(BINDIR)/cpmls
 		$(INSTALL) -s -m 755 cpmcp $(BINDIR)/cpmcp
 		$(INSTALL) -s -m 755 cpmrm $(BINDIR)/cpmrm

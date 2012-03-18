@@ -3,6 +3,7 @@
 
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <utime.h>
 
 #ifdef _WIN32
     #include <windows.h>
@@ -99,9 +100,34 @@ struct cpmStat
   time_t ctime;
 };
 
+#define CPMFS_HI_USER    (0x1<<0) /* has user numbers up to 31    */
+#define CPMFS_CPM3_DATES (0x1<<1) /* has CP/M+ style time stamps  */
+#define CPMFS_CPM3_OTHER (0x1<<2) /* has passwords and disc label */
+#define CPMFS_DS_DATES   (0x1<<3) /* has datestamper timestamps   */
+#define CPMFS_EXACT_SIZE (0x1<<4) /* has exact file size          */
+
 #define CPMFS_DR22  0
-#define CPMFS_P2DOS 1
-#define CPMFS_DR3   2
+#define CPMFS_P2DOS (CPMFS_CPM3_DATES|CPMFS_HI_USER)
+#define CPMFS_DR3   (CPMFS_CPM3_DATES|CPMFS_CPM3_OTHER|CPMFS_HI_USER)
+#define CPMFS_ISX   (CPMFS_EXACT_SIZE)
+#define CPMFS_ZSYS  (CPMFS_HI_USER)
+
+struct dsEntry
+{
+  char year;
+  char month;
+  char day;
+  char hour;
+  char minute;
+};
+          
+struct dsDate
+{
+  struct dsEntry create;
+  struct dsEntry access;
+  struct dsEntry modify;
+  char checksum;
+};
 
 struct cpmSuperBlock
 {
@@ -114,7 +140,8 @@ struct cpmSuperBlock
   int maxdir;
   int skew;
   int boottrk;
-  int type;
+  off_t offset;
+  unsigned int type;
   int size;
   int extents; /* logical extents per physical extent */
   struct PhysDirectoryEntry *dir;
@@ -128,6 +155,8 @@ struct cpmSuperBlock
   size_t passwdLength;
   struct cpmInode *root;
   int dirtyDirectory;
+  struct dsDate *ds;
+  int dirtyDs;
 };
 
 struct cpmStatFS
@@ -164,8 +193,10 @@ int cpmRead(struct cpmFile *file, char *buf, int count);
 int cpmWrite(struct cpmFile *file, const char *buf, int count);
 int cpmClose(struct cpmFile *file);
 int cpmCreat(struct cpmInode *dir, const char *fname, struct cpmInode *ino, mode_t mode);
+void cpmUtime(struct cpmInode *ino, struct utimbuf *times);
 int cpmSync(struct cpmSuperBlock *sb);
 void cpmUmount(struct cpmSuperBlock *sb);
+int cpmCheckDs(struct cpmSuperBlock *sb);
 
 #ifdef __cplusplus
 	}
