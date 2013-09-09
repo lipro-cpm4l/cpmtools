@@ -571,13 +571,14 @@ int main(int argc, char *argv[])
 {
   const char *err;
   const char *image;
-  const char *format=FORMAT;
+  const char *format;
   const char *devopts=NULL;
   int c,usage=0;
   struct cpmSuperBlock sb;
   struct cpmInode root;
   enum Result ret;
 
+  if (!(format=getenv("CPMTOOLSFMT"))) format=FORMAT;
   while ((c=getopt(argc,argv,"T:f:nh?"))!=EOF) switch(c)
   {
     case 'f': format=optarg; break;

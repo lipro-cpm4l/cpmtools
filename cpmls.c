@@ -336,7 +336,7 @@ int main(int argc, char *argv[])
   /* variables */ /*{{{*/
   const char *err;
   const char *image;
-  const char *format=FORMAT;
+  const char *format;
   const char *devopts=NULL;
   int c,usage=0;
   struct cpmSuperBlock drive;
@@ -351,6 +351,7 @@ int main(int argc, char *argv[])
   /*}}}*/
 
   /* parse options */ /*{{{*/
+  if (!(format=getenv("CPMTOOLSFMT"))) format=FORMAT;
   while ((c=getopt(argc,argv,"cT:f:ih?dDFlA"))!=EOF) switch(c)
   {
     case 'f': format=optarg; break;

@@ -28,6 +28,9 @@ Upon successful completion, exit code 0 is returned.
 .SH ERRORS \"{{{
 Any errors are indicated by exit code 1.
 .\"}}}
+.SH ENVIRONMENT \"{{{
+CPMTOOLSFMT     Default format
+.\"}}}
 .SH FILES \"{{{
 @DATADIR@/diskdefs	CP/M disk format definitions
 .\"}}}

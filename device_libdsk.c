@@ -31,7 +31,7 @@ void Device_setGeometry(struct Device *this, int secLength, int sectrk, int trac
   this->sectrk=sectrk;
   this->tracks=tracks;
   /* Must be an even multiple of sector size */
-  assert((offset%secLength==0);
+  assert(offset%secLength==0);
   this->offset=offset;
   
   this->geom.dg_secsize   = secLength;
@@ -65,7 +65,7 @@ const char *Device_close(struct Device *this)
 const char *Device_readSector(const struct Device *this, int track, int sector, char *buf)
 {
   dsk_err_t e;
-  e = dsk_lread(this->dev, &this->geom, buf, (track * this->sectrk) + sector + offset/this->secLength);
+  e = dsk_lread(this->dev, &this->geom, buf, (track * this->sectrk) + sector + this->offset/this->secLength);
   return (e?dsk_strerror(e):(const char*)0);
 }
 /*}}}*/
@@ -73,7 +73,7 @@ const char *Device_readSector(const struct Device *this, int track, int sector, 
 const char *Device_writeSector(const struct Device *this, int track, int sector, const char *buf)
 {
   dsk_err_t e;
-  e = dsk_lwrite(this->dev, &this->geom, buf, (track * this->sectrk) + sector + offset/this->secLength);
+  e = dsk_lwrite(this->dev, &this->geom, buf, (track * this->sectrk) + sector + this->offset/this->secLength);
   return (e?dsk_strerror(e):(const char*)0);
 }
 /*}}}*/
