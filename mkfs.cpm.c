@@ -103,7 +103,7 @@ const char cmd[]="mkfs.cpm";
 int main(int argc, char *argv[]) /*{{{*/
 {
   char *image;
-  const char *format=FORMAT;
+  const char *format;
   int c,usage=0;
   struct cpmSuperBlock drive;
   struct cpmInode root;
@@ -112,6 +112,7 @@ int main(int argc, char *argv[]) /*{{{*/
   char *bootTracks;
   const char *boot[4]={(const char*)0,(const char*)0,(const char*)0,(const char*)0};
 
+  if (!(format=getenv("CPMTOOLSFMT"))) format=FORMAT;
   while ((c=getopt(argc,argv,"b:f:L:h?"))!=EOF) switch(c)
   {
     case 'b':
