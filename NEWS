@@ -1,5 +1,4 @@
 Changes since 2.15:
 
-*  Various small fixes
-*  Datestamper support
-*  Image offset to access disk slices
+*  Default format using $CPMTOOLSFMT
+o  fixed device_libdsk.c

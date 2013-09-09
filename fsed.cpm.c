@@ -166,7 +166,7 @@ int main(int argc, char *argv[]) /*{{{*/
   const char *err;
   struct cpmSuperBlock drive;
   struct cpmInode root;
-  const char *format=FORMAT;
+  const char *format;
   int c,usage=0;
   unsigned long pos;
   chtype ch;
@@ -175,6 +175,7 @@ int main(int argc, char *argv[]) /*{{{*/
   /*}}}*/
 
   /* parse options */ /*{{{*/
+  if (!(format=getenv("CPMTOOLSFMT"))) format=FORMAT;
   while ((c=getopt(argc,argv,"T:f:h?"))!=EOF) switch(c)
   {
     case 'f': format=optarg; break;

@@ -124,7 +124,7 @@ int main(int argc, char *argv[])
   /* variables */ /*{{{*/
   const char *err;
   const char *image;
-  const char *format=FORMAT;
+  const char *format;
   const char *devopts=NULL;
   int c,readcpm=-1,todir=-1;
   struct cpmInode root;
@@ -135,6 +135,7 @@ int main(int argc, char *argv[])
   /*}}}*/
 
   /* parse options */ /*{{{*/
+  if (!(format=getenv("CPMTOOLSFMT"))) format=FORMAT;
   while ((c=getopt(argc,argv,"T:f:h?pt"))!=EOF) switch(c)
   {
     case 'T': devopts=optarg; break;
