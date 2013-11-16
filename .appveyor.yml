@@ -25,9 +25,8 @@ init:
   - git config --global core.autocrlf input
 
 build_script:
-  - cmd: if defined BASH (%BASH% -lc "cd $(cygpath ${APPVEYOR_BUILD_FOLDER}) && ./configure --help")
-# - cmd: if defined BASH (%BASH% -lc "cd $(cygpath ${APPVEYOR_BUILD_FOLDER}) && CPPFLAGS=-D_WIN32 ./configure --with-diskdefs=/usr/local/share/diskdefs")
-# - cmd: if defined BASH (%BASH% -lc "cd $(cygpath ${APPVEYOR_BUILD_FOLDER}) && make all && make fsck.test && mkdir -p /usr/local/share /usr/local/share/man/man1 /usr/local/share/man/man5 && make install")
+  - cmd: if defined BASH (%BASH% -lc "cd $(cygpath ${APPVEYOR_BUILD_FOLDER}) && CPPFLAGS=-D_WIN32 ./configure --with-diskdefs=/usr/local/share/diskdefs")
+  - cmd: if defined BASH (%BASH% -lc "cd $(cygpath ${APPVEYOR_BUILD_FOLDER}) && make all && make fsck.test && mkdir -p /usr/local/share /usr/local/share/man/man1 /usr/local/share/man/man5 && make install")
 
 test: false
 
