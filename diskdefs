@@ -284,6 +284,19 @@ diskdef gide-cfb
   os 3
 end
 
+# AT&T/Olivetti Word Processor
+diskdef attwp
+   seclen 256
+   tracks 80
+   sectrk 32
+   blocksize 2048
+   maxdir 128
+   boottrk 1
+   logicalextents 1
+   skewtab 0,2,4,6,8,10,12,14,1,3,5,7,9,11,13,15,16,18,20,22,24,26,28,30,17,19,21,23,25,27,29,31
+   os 2
+end
+
 # Kaypro II
 diskdef kpii
   seclen 512
@@ -456,5 +469,166 @@ diskdef z80pack-hdb
   maxdir 8192
   skew 0
   boottrk 0
+  os 2.2
+end
+
+# Bondwell 12 and 14 disk images in IMD raw binary format
+diskdef bw12
+  seclen 256
+  tracks 40
+  sectrk 18
+  blocksize 2048
+  maxdir 64
+  skew 1
+  boottrk 2
+  os 2.2
+end
+
+diskdef bw14
+  seclen 256
+  tracks 80
+  sectrk 18
+  blocksize 2048
+  maxdir 64
+  skew 1
+  boottrk 2
+  os 2.2
+end
+
+############################
+# north star cp/m  disks
+############################
+
+#North Star floppy 360K
+
+diskdef nsfd
+  seclen 512
+  tracks 70 
+  sectrk 10 
+  blocksize 2048
+  maxdir 64
+  skew 5  
+  boottrk 2
+  os 2.2   
+end
+
+
+#North Star CP/M Virtual-Disk file on Hard Disk
+# prepared with allocation factor = 4
+# as in "CR CPMB 4000 4"
+# needs to be copied off hard drive before you can 
+# work on it with cpmtools
+
+diskdef nshd4
+  seclen 512
+  tracks 512
+  sectrk 16 
+  blocksize 4096
+  maxdir 256
+  skew 0  
+  boottrk 0
+  os 2.2   
+end
+
+
+#North Star CP/M Virtual-Disk file on Hard Disk
+# prepared with allocation factor = 8
+# as in "CR CPMB 6000 8"
+# needs to be copied off hard drive before you can
+# work on it with cpmtools
+
+diskdef nshd8
+  seclen 512
+  tracks 1024
+  sectrk 16 
+  blocksize 8192
+  maxdir 256
+  skew 0  
+  boottrk 0
+  os 2.2   
+end
+
+# Northstar Micro-Disk System MDS-A-D 175
+diskdef mdsad175
+    seclen 512
+    blocksize 1024
+    tracks 35
+    maxdir 64
+    boottrk 2
+    sectrk 10
+    skew 5
+    os 2.2
+end
+
+
+# Northstar Micro-Disk System MDS-A-D 350
+diskdef mdsad350
+   seclen 512
+   blocksize 2048
+   tracks 70
+   maxdir 64
+   boottrk 2
+   sectrk 10
+   skew 5
+   os 2.2
+end
+
+
+# Osborne 1
+diskdef osborne1
+   seclen 1024
+   tracks 40
+   sectrk 5
+   blocksize 1024
+   maxdir 64
+   boottrk 3
+   os 2
+end
+
+# Osborne Nuevo/Vixen/4
+diskdef osborne4
+   seclen 1024
+   tracks 80
+   sectrk 5
+   blocksize 2048
+   maxdir 128
+   skew 2
+   boottrk 2
+   os 2
+end
+
+# Lobo Max-80 8" CP/M 2
+diskdef lobo2
+  seclen 256
+  tracks 77
+  sectrk 30
+  blocksize 2048
+  maxdir 64
+  skew 0
+  boottrk 2
+  os 2.2
+end
+
+#Lobo Max-80 8" CP/M 3
+diskdef lobo3
+  seclen 512
+  tracks 77
+  sectrk 17
+  blocksize 2048
+  maxdir 64
+  skew 0
+  boottrk 2
+  os 3
+end
+
+# PRO CP/M RZ50 DZ format, experimental
+diskdef dec_pro
+  seclen 512
+  tracks 80
+  sectrk 10
+  blocksize 2048
+  maxdir 128
+  skew 2
+  boottrk 2
   os 2.2
 end

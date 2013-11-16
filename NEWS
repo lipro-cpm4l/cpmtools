@@ -1,4 +1,5 @@
-Changes since 2.15:
+Changes since 2.16:
 
-*  Default format using $CPMTOOLSFMT
-o  fixed device_libdsk.c
+o  Improved filesystem documentation
+o  Many new diskdefs
+o  device_win32.c fixed by Bill Buckels

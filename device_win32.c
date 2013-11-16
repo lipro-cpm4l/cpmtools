@@ -385,13 +385,18 @@ const char *Device_open(struct Device *sb, const char *filename, int mode, const
 }
 /*}}}*/
 /* Device_setGeometry    -- Set disk geometry                       */ /*{{{*/
-void Device_setGeometry(struct Device *this, int secLength, int sectrk, int tracks)
+void Device_setGeometry(struct Device *this, int secLength, int sectrk, int tracks, off_t offset)
 {
   int n;
 
   this->secLength=secLength;
   this->sectrk=sectrk;
   this->tracks=tracks;
+  // Bill Buckels - add this->offset
+  this->offset=offset;
+
+
+  // Bill Buckels - not sure what to do here
   if (this->drvtype == CPMDRV_WIN95)
   {
       DRIVEPARAMS drvp;
@@ -484,7 +489,8 @@ const char *Device_readSector(const struct Device *drive, int track, int sector,
         LPVOID iobuffer;
         DWORD  bytesread;
     
-        if (SetFilePointer(drive->hdisk, offset, NULL, FILE_BEGIN) == INVALID_FILE_SIZE)
+        // Bill Buckels - add drive->offset
+        if (SetFilePointer(drive->hdisk, offset+drive->offset, NULL, FILE_BEGIN) == INVALID_FILE_SIZE)
         {
             return strwin32error();
         }
@@ -511,6 +517,7 @@ const char *Device_readSector(const struct Device *drive, int track, int sector,
         return NULL;
   }
 
+  // Bill Buckels - not sure what to do here
   if (drive->drvtype == CPMDRV_WIN95)
   {
         DIOC_REGISTERS reg;
@@ -552,7 +559,8 @@ const char *Device_readSector(const struct Device *drive, int track, int sector,
         return 0;
   }
 
-  if (lseek(drive->fd,offset,SEEK_SET)==-1)
+  // Bill Buckels - add drive->offset
+  if (lseek(drive->fd,offset+drive->offset,SEEK_SET)==-1)
   {
     return strerror(errno);
   }
@@ -585,7 +593,8 @@ const char *Device_writeSector(const struct Device *drive, int track, int sector
         LPVOID iobuffer;
         DWORD  byteswritten;
 
-        if (SetFilePointer(drive->hdisk, offset, NULL, FILE_BEGIN) == INVALID_FILE_SIZE)
+        // Bill Buckels - add drive->offset
+        if (SetFilePointer(drive->hdisk, offset+drive->offset, NULL, FILE_BEGIN) == INVALID_FILE_SIZE)
         {
             return strwin32error();
         }
@@ -607,6 +616,7 @@ const char *Device_writeSector(const struct Device *drive, int track, int sector
         return NULL;
   }
 
+  // Bill Buckels - not sure what to do here
   if (drive->drvtype == CPMDRV_WIN95)
   {
         DIOC_REGISTERS reg;
@@ -648,7 +658,8 @@ const char *Device_writeSector(const struct Device *drive, int track, int sector
         return NULL;
   }
 
-  if (lseek(drive->fd,offset, SEEK_SET)==-1)
+  // Bill Buckels - add drive->offset
+  if (lseek(drive->fd,offset+drive->offset, SEEK_SET)==-1)
   {
     return strerror(errno);
   }
