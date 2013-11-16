@@ -1,7 +1,7 @@
 .\" Believe it or not, reportedly there are nroffs which do not know \(en
 .if n .ds en -
 .if t .ds en \(en
-.TH CPM 5 "February 18, 2012" "CP/M tools" "File formats"
+.TH CPM 5 "November 16, 2013" "CP/M tools" "File formats"
 .SH NAME \"{{{roff}}}\"{{{
 cpm \- CP/M disk and file system format
 .\"}}}
@@ -151,15 +151,18 @@ ISX records the number of unused instead of used bytes in Bc.
 .\"}}}
 .LP
 .\"{{{ Al     = allocated blocks
-\fBAl\fP stores block pointers.  If the disk capacity is less than 256 blocks,
-Al is interpreted as 16 byte-values, otherwise as 8 double-byte-values.
-A block pointer of 0 marks a hole in the file.  If a hole
-covers the range of a full extent, the extent will not be allocated.  In particular,
-the first extent of a file does not neccessarily have extent number 0.
-A file may not share blocks with other files, as its blocks would be freed
-if the other files is erased without a following disk system reset.  CP/M returns
-EOF when it reaches a hole, whereas UNIX returns zero-value bytes, which makes
-holes invisible.
+\fBAl\fP stores block pointers.  If the disk capacity minus boot
+tracks but including the directory area is less than 256 blocks, Al
+is interpreted as 16 byte-values, otherwise as 8 double-byte-values.
+Since the directory area is not subtracted, the directory area starts
+with block 0 and files can never allocate block 0, which is why this
+value can be given a new meaning: A block pointer of 0 marks a hole in
+the file.  If a hole covers the range of a full extent, the extent will
+not be allocated.  In particular, the first extent of a file does not
+neccessarily have extent number 0.  A file may not share blocks with other
+files, as its blocks would be freed if the other files is erased without
+a following disk system reset.  CP/M returns EOF when it reaches a hole,
+whereas UNIX returns zero-value bytes, which makes holes invisible.
 .\"}}}
 .\"}}}
 .SS "Native time stamps" \"{{{
