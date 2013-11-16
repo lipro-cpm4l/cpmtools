@@ -65,7 +65,7 @@ static void memcpy7(char *dest, const char *src, int count)
 
 /* file name conversions */ 
 /* splitFilename      -- split file name into name and extension */ /*{{{*/
-int splitFilename(const char *fullname, int type, char *name, char *ext, int *user) 
+static int splitFilename(const char *fullname, int type, char *name, char *ext, int *user) 
 {
   int i,j;
 

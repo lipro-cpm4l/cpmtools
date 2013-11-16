@@ -2254,8 +2254,8 @@ IFS=$ac_save_IFS
 case $host_os in *\ *) host_os=`echo "$host_os" | sed 's/ /-/g'`;; esac
 
 
-VERSION=2.15
-UPDATED='February 18, 2012'
+VERSION=2.17
+UPDATED='November 16, 2013'
 
 DEVICE="posix"
 
