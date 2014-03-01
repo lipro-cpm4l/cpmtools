@@ -1,4 +1,4 @@
-.TH CPMCHMOD 1 "November 16, 2013" "CP/M tools" "User commands"
+.TH CPMCHMOD 1 "April 5, 2014" "CP/M tools" "User commands"
 .SH NAME \"{{{roff}}}\"{{{
 cpmchmod \- change file mode on CP/M files
 .\"}}}
@@ -19,6 +19,9 @@ cpmchmod \- change file mode on CP/M files
 .SH OPTIONS \"{{{
 .IP "\fB\-f\fP \fIformat\fP"
 Use the given CP/M disk \fIformat\fP instead of the default format.
+.IP "\fB\-T\fP \fIlibdsk-type\fP"
+libdsk driver type, e.g. \fBtele\fP for Teledisk images or \fBraw\fP for raw images 
+(requires building cpmtools with support for libdsk).
 .IP "\fImode\fP"
 Octal file mode, as used in \fIchmod\fP(1).
 .\"}}}

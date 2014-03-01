@@ -11,6 +11,7 @@ mkfs.cpm \- make a CP/M file system
 .IR boot ]
 .RB [ \-L
 .IR label ]
+.RB [ \-t ]
 .I image
 .ad b
 .\"}}}
@@ -27,6 +28,8 @@ times.  The file contents (typically boot block, CCP, BDOS and BIOS)
 are written to sequential sectors, padding with 0xe5 if needed.
 .IP "\fB\-L\fP \fIlabel\fP"
 Label the file system.  This is only supported by CP/M Plus.
+.IP "\fB\-t\fP"
+Create time stamps.
 .\"}}}
 .SH "RETURN VALUE" \"{{{
 Upon successful completion, exit code 0 is returned.

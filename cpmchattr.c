@@ -57,10 +57,14 @@ int main(int argc, char *argv[]) /*{{{*/
   /* open image */ /*{{{*/
   if ((err=Device_open(&drive.dev, image, O_RDWR, devopts)))
   {
-    fprintf(stderr,"%s: can not open %s (%s)\n",cmd,image,err);
+    fprintf(stderr,"%s: cannot open %s (%s)\n",cmd,image,err);
     exit(1);
   }
-  cpmReadSuper(&drive,&root,format);
+  if (cpmReadSuper(&drive,&root,format)==-1)
+  {
+    fprintf(stderr,"%s: cannot read superblock (%s)\n",cmd,boo);
+    exit(1);
+  }
   /*}}}*/
   cpmglob(optind,argc,argv,&root,&gargc,&gargv);
   for (i=0; i<gargc; ++i)
