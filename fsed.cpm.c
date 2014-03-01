@@ -3,13 +3,23 @@
 
 #include <assert.h>
 #include <ctype.h>
+#if NEED_NCURSES
+#if HAVE_NCURSES_NCURSES_H
+#include <ncurses/ncurses.h>
+#else
+#include <ncurses.h>
+#endif
+#else
 #include <curses.h>
+#endif
 #include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 
 #include "cpmfs.h"
+#include "getopt_.h"
 
 #ifdef USE_DMALLOC
 #include <dmalloc.h>
@@ -196,10 +206,14 @@ int main(int argc, char *argv[]) /*{{{*/
   /* open image */ /*{{{*/
   if ((err=Device_open(&drive.dev,image,O_RDONLY,devopts))) 
   {
-    fprintf(stderr,"%s: can not open %s (%s)\n",cmd,image,err);
+    fprintf(stderr,"%s: cannot open %s (%s)\n",cmd,image,err);
     exit(1);
   }
-  cpmReadSuper(&drive,&root,format);
+  if (cpmReadSuper(&drive,&root,format)==-1)
+  {
+    fprintf(stderr,"%s: cannot read superblock (%s)\n",cmd,boo);
+    exit(1);
+  }
   /*}}}*/
   /* alloc sector buffers */ /*{{{*/
   if ((buf=malloc(drive.secLength))==(char*)0 || (mapbuf=malloc(drive.secLength))==(char*)0)

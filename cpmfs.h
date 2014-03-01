@@ -104,7 +104,7 @@ struct cpmStat
 #define CPMFS_CPM3_DATES (0x1<<1) /* has CP/M+ style time stamps  */
 #define CPMFS_CPM3_OTHER (0x1<<2) /* has passwords and disc label */
 #define CPMFS_DS_DATES   (0x1<<3) /* has datestamper timestamps   */
-#define CPMFS_EXACT_SIZE (0x1<<4) /* has exact file size          */
+#define CPMFS_EXACT_SIZE (0x1<<4) /* has reverse exact file size  */
 
 #define CPMFS_DR22  0
 #define CPMFS_P2DOS (CPMFS_CPM3_DATES|CPMFS_HI_USER)

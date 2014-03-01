@@ -325,9 +325,14 @@ static int readBlock(const struct cpmSuperBlock *d, int blockno, char *buffer, i
 {
   int sect, track, counter;
 
+  assert(d);
   assert(blockno>=0);
-  assert(blockno<d->size);
-  assert(buffer!=(char*)0);
+  assert(buffer);
+  if (blockno>=d->size)
+  {
+    boo="Attempting to access block beyond end of disk";
+    return -1;
+  }
   if (end<0) end=d->blksiz/d->secLength-1;
   sect=(blockno*(d->blksiz/d->secLength)+ d->sectrk*d->boottrk)%d->sectrk;
   track=(blockno*(d->blksiz/d->secLength)+ d->sectrk*d->boottrk)/d->sectrk;
@@ -335,6 +340,8 @@ static int readBlock(const struct cpmSuperBlock *d, int blockno, char *buffer, i
   {
     const char *err;
 
+    assert(d->skewtab[sect]>=0);
+    assert(d->skewtab[sect]<d->sectrk);
     if (counter>=start && (err=Device_readSector(&d->dev,track,d->skewtab[sect],buffer+(d->secLength*counter))))
     {
       boo=err;
@@ -581,6 +588,8 @@ static int recmatch(const char *a, const char *pattern)
 {
   int first=1;
 
+  assert(a);
+  assert(pattern);
   while (*pattern)
   {
     switch (*pattern)
@@ -609,6 +618,8 @@ int match(const char *a, const char *pattern)
   int user;
   char pat[255];
 
+  assert(a);
+  assert(pattern);
   assert(strlen(pattern)<255);
   if (isdigit(*pattern) && *(pattern+1)==':') { user=(*pattern-'0'); pattern+=2; }
   else if (isdigit(*pattern) && isdigit(*(pattern+1)) && *(pattern+2)==':') { user=(10*(*pattern-'0')+(*(pattern+1)-'0')); pattern+=3; }
@@ -809,7 +820,7 @@ static int diskdefReadSuper(struct cpmSuperBlock *d, const char *format)
       insideDef=1;
       d->skew=1;
       d->extents=0;
-      d->type|=CPMFS_DR3;
+      d->type=CPMFS_DR22;
       d->skewtab=(int*)0;
       d->offset=0;
       d->boottrk=d->secLength=d->sectrk=d->tracks=-1;
@@ -953,7 +964,7 @@ int cpmReadSuper(struct cpmSuperBlock *d, struct cpmInode *root, const char *for
   assert(s_ifdir);
   while (s_ifreg && !S_ISREG(s_ifreg)) s_ifreg<<=1;
   assert(s_ifreg);
-  if (strcmp(format, "amstrad")==0) amsReadSuper(d,format);
+  if (strcmp(format,"amstrad")==0) amsReadSuper(d,format);
   else diskdefReadSuper(d,format);
   Device_setGeometry(&d->dev,d->secLength,d->sectrk,d->tracks,d->offset);
   if (d->skewtab==(int*)0) /* generate skew table */ /*{{{*/
@@ -962,14 +973,16 @@ int cpmReadSuper(struct cpmSuperBlock *d, struct cpmInode *root, const char *for
 
     if (( d->skewtab = malloc(d->sectrk*sizeof(int))) == (int*)0) 
     {
-      fprintf(stderr,"%s: can not allocate memory for skew sector table\n",cmd);
-      exit(1);
+      boo=strerror(errno);
+      return -1;
     }
     memset(d->skewtab,0,d->sectrk*sizeof(int));
     for (i=j=0; i<d->sectrk; ++i,j=(j+d->skew)%d->sectrk)
     {
       while (1)
       {
+        assert(i<d->sectrk);
+        assert(j<d->sectrk);
         for (k=0; k<i && d->skewtab[k]!=j; ++k);
         if (k<i) j=(j+1)%d->sectrk;
         else break;
@@ -983,15 +996,16 @@ int cpmReadSuper(struct cpmSuperBlock *d, struct cpmInode *root, const char *for
     d->alvSize=((d->secLength*d->sectrk*(d->tracks-d->boottrk))/d->blksiz+INTBITS-1)/INTBITS;
     if ((d->alv=malloc(d->alvSize*sizeof(int)))==(int*)0) 
     {
-      boo="out of memory";
+      boo=strerror(errno);
       return -1;
     }
   }
   /*}}}*/
   /* allocate directory buffer */ /*{{{*/
-  if ((d->dir=malloc(d->maxdir*32))==(struct PhysDirectoryEntry*)0)
+  assert(sizeof(struct PhysDirectoryEntry)==32);
+  if ((d->dir=malloc(((d->maxdir*32+d->blksiz-1)/d->blksiz)*d->blksiz))==(struct PhysDirectoryEntry*)0)
   {
-    boo="out of memory";
+    boo=strerror(errno);
     return -1;
   }
   /*}}}*/
@@ -1616,7 +1630,11 @@ int cpmRead(struct cpmFile *file, char *buf, int count)
         {
           start=(file->pos%blocksize)/file->ino->sb->secLength;
           end=((file->pos%blocksize+count)>blocksize ? blocksize-1 : (file->pos%blocksize+count-1))/file->ino->sb->secLength;
-          readBlock(file->ino->sb,block,buffer,start,end);
+          if (readBlock(file->ino->sb,block,buffer,start,end)==-1)
+          {
+            if (got==0) got=-1;
+            break;
+          }
         }
       }
       nextblockpos=(file->pos/blocksize)*blocksize+blocksize;
@@ -1693,8 +1711,22 @@ int cpmWrite(struct cpmFile *file, const char *buf, int count)
       {
         start=(file->pos%blocksize)/file->ino->sb->secLength;
         end=((file->pos%blocksize+count)>blocksize ? blocksize-1 : (file->pos%blocksize+count-1))/file->ino->sb->secLength;
-        if (file->pos%file->ino->sb->secLength) readBlock(file->ino->sb,block,buffer,start,start);
-        if (end!=start && (file->pos+count-1)<blocksize) readBlock(file->ino->sb,block,buffer+end*file->ino->sb->secLength,end,end);
+        if (file->pos%file->ino->sb->secLength)
+        {
+          if (readBlock(file->ino->sb,block,buffer,start,start)==-1)
+          {
+            if (got==0) got=-1;
+            break;
+          }
+        }
+        if (end!=start && (file->pos+count-1)<blocksize)
+        {
+          if (readBlock(file->ino->sb,block,buffer+end*file->ino->sb->secLength,end,end)==-1)
+          {
+            if (got==0) got=-1;
+            break;
+          }
+        }
       }
       /*}}}*/
       nextblockpos=(file->pos/blocksize)*blocksize+blocksize;

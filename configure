@@ -2254,8 +2254,8 @@ IFS=$ac_save_IFS
 case $host_os in *\ *) host_os=`echo "$host_os" | sed 's/ /-/g'`;; esac
 
 
-VERSION=2.17
-UPDATED='November 16, 2013'
+VERSION=2.18
+UPDATED='April 5, 2014'
 
 DEVICE="posix"
 
@@ -3448,57 +3448,8 @@ else
   FSED_CPM=
 fi
 
-fi
-
-if test "$LIBDSK" != ""; then
-  DEVICE="libdsk"
-  CPPFLAGS="$CPPFLAGS -I$LIBDSK/include"
-  CFLAGS="$CFLAGS -I$LIBDSK/include $CFLAGS_LIBDSK"
-  LDFLAGS="$LDFLAGS -L$LIBDSK/lib"
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for dsk_open in -ldsk" >&5
-$as_echo_n "checking for dsk_open in -ldsk... " >&6; }
-if ${ac_cv_lib_dsk_dsk_open+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-ldsk  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char dsk_open ();
-int
-main ()
-{
-return dsk_open ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_dsk_dsk_open=yes
-else
-  ac_cv_lib_dsk_dsk_open=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_dsk_dsk_open" >&5
-$as_echo "$ac_cv_lib_dsk_dsk_open" >&6; }
-if test "x$ac_cv_lib_dsk_dsk_open" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBDSK 1
-_ACEOF
-
-  LIBS="-ldsk $LIBS"
-
-fi
+  if test x"$FSED_CPM" != x""; then
+    $as_echo "#define NEED_NCURSES 1" >>confdefs.h
 
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for grep that handles long lines and -e" >&5
@@ -3760,7 +3711,72 @@ fi
 done
 
 
-for ac_header in libdsk.h
+for ac_header in ncurses/ncurses.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "ncurses/ncurses.h" "ac_cv_header_ncurses_ncurses_h" "$ac_includes_default"
+if test "x$ac_cv_header_ncurses_ncurses_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_NCURSES_NCURSES_H 1
+_ACEOF
+ have_ncurses_ncurses_h=yes
+fi
+
+done
+
+  fi
+fi
+
+if test "$LIBDSK" != ""; then
+  DEVICE="libdsk"
+  CPPFLAGS="$CPPFLAGS -I$LIBDSK/include"
+  CFLAGS="$CFLAGS -I$LIBDSK/include $CFLAGS_LIBDSK"
+  LDFLAGS="$LDFLAGS -L$LIBDSK/lib"
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for dsk_open in -ldsk" >&5
+$as_echo_n "checking for dsk_open in -ldsk... " >&6; }
+if ${ac_cv_lib_dsk_dsk_open+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-ldsk  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char dsk_open ();
+int
+main ()
+{
+return dsk_open ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_dsk_dsk_open=yes
+else
+  ac_cv_lib_dsk_dsk_open=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_dsk_dsk_open" >&5
+$as_echo "$ac_cv_lib_dsk_dsk_open" >&6; }
+if test "x$ac_cv_lib_dsk_dsk_open" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBDSK 1
+_ACEOF
+
+  LIBS="-ldsk $LIBS"
+
+fi
+
+  for ac_header in libdsk.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "libdsk.h" "ac_cv_header_libdsk_h" "$ac_includes_default"
 if test "x$ac_cv_header_libdsk_h" = xyes; then :

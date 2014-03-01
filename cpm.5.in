@@ -24,7 +24,8 @@ Logical sector skew
 .br
 Number of reserved system tracks (optional)
 .br
-Offset to start of volume (optional)
+Offset to start of volume (optional and not covered by operating system,
+but disk driver specific)
 .sp
 .RE
 A block is the smallest allocatable storage unit.  CP/M supports block
@@ -34,10 +35,10 @@ formats.  Accessing a block is performed by accessing its sectors, which
 are stored with the given software skew.
 .\"}}}
 .SS "Device areas" \"{{{
-A CP/M disk contains three areas:
+A CP/M disk contains four areas:
 .RS
 .sp
-Volume offset (optional)
+Volume offset (optional and not covered by operating system, but disk driver specific)
 .br
 System tracks (optional)
 .br
@@ -54,15 +55,15 @@ drive for the first time, CP/M builds this bitmap in core from the directory.
 .LP
 A hard disk can have the additional notion of a \fIvolume offset\fP to
 locate the start of the drive image (which may or may not have system
-tracks associated with it). The base unit for volume offset is byte
+tracks associated with it).  The base unit for volume offset is byte
 count from the beginning of the physical disk, but specifiers of
 \fIK\fP, \fIM\fP, \fIT\fP or \fIS\fP may be appended to denote
 kilobytes, megabytes, tracks or sectors.  If provided, a specifier
 must immediately follow the numeric value with no whitespace.  For
 convenience upper and lower case are both accepted and only the first
 letter is significant, thus 2KB, 8MB, 1000trk and 16sec are valid
-values. Offset must appear subsequent to track, sector and sector
-length values.
+values.  The \fBoffset\fP must appear subsequent to track, sector and sector
+length values for the sector and track units to work.
 .\"}}}
 .SS "Directory entries" \"{{{
 The directory is a sequence of directory entries (also called extents),
@@ -214,11 +215,13 @@ following structure of 16 bytes:
 .br
 5 bytes modify datefield
 .br
-1 byte checksum
+1 byte magic number/checksum
 .sp
 .RE
-The checksum is only used on every 8th entry (last entry in 128-byte
-record) and is the sum of the first 127 bytes of the record.
+The magic number is used for the first 7 entries of each 128-byte record
+and contains the characters \fB!\fP, \fB!\fP, \fB!\fP, \fBT\fP, \fBI\fP,
+\fBM\fP and \fBE\fP.  The checksum is used on every 8th entry (last entry
+in 128-byte record) and is the sum of the first 127 bytes of the record.
 Each datefield has this structure:
 .RS
 .sp

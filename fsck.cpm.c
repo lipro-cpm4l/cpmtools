@@ -249,7 +249,7 @@ static int fsck(struct cpmInode *root, const char *image)
           if (block>0)
           {
             ++usedBlocks;
-            if (block<min || block>max)
+            if (block<min || block>=max)
             {
               printf("Error: Bad block number (extent=%d, name=\"%s\", block=%d)\n",extent,prfile(sb,extent),block);
               if (ask("Remove file"))
@@ -600,15 +600,19 @@ int main(int argc, char *argv[])
   {
     if ((err=Device_open(&sb.dev, image,O_RDONLY, devopts)))
     {
-      fprintf(stderr,"%s: can not open %s: %s\n",cmd,image,err);
+      fprintf(stderr,"%s: cannot open %s: %s\n",cmd,image,err);
       exit(1);
     }
     else
     {
-      fprintf(stderr,"%s: can not open %s for writing, no repair possible\n",cmd,image);
+      fprintf(stderr,"%s: cannot open %s for writing, no repair possible\n",cmd,image);
     }
   }
-  cpmReadSuper(&sb,&root,format);
+  if (cpmReadSuper(&sb,&root,format)==-1)
+  {
+    fprintf(stderr,"%s: cannot read superblock (%s)\n",cmd,boo);
+    exit(1);
+  }
   ret=fsck(&root,image);
   if (ret&MODIFIED)
   {

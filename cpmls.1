@@ -1,13 +1,15 @@
-.TH CPMLS 1 "November 16, 2013" "CP/M tools" "User commands"
+.TH CPMLS 1 "April 5, 2014" "CP/M tools" "User commands"
 .SH NAME \"{{{roff}}}\"{{{
 cpmls \- list sorted contents of directory
 .\"}}}
 .SH SYNOPSIS \"{{{
 .ad l
 .B cpmls
-.RB [ \-d | \-D | \-F | \-A | \-l [ \-c ][ \-i ]]
 .RB [ \-f
 .IR format ]
+.RB [ \-T
+.IR libdsk-type ]
+.RB [ \-d | \-D | \-F | \-A | \-l [ \-c ][ \-i ]]
 .I image
 .RI [ file-pattern "...]"
 .ad b
@@ -18,6 +20,9 @@ cpmls \- list sorted contents of directory
 .SH OPTIONS \"{{{
 .IP "\fB\-f\fP \fIformat\fP"
 Use the given CP/M disk \fIformat\fP instead of the default format.
+.IP "\fB\-T\fP \fIlibdsk-type\fP"
+libdsk driver type, e.g. \fBtele\fP for Teledisk images or \fBraw\fP for raw images
+(requires building cpmtools with support for libdsk).
 .IP \fB\-d\fP
 Old CP/M 2.2 dir output.
 .IP \fB\-D\fP
