@@ -294,7 +294,7 @@ diskdef attwp
    boottrk 1
    logicalextents 1
    skewtab 0,2,4,6,8,10,12,14,1,3,5,7,9,11,13,15,16,18,20,22,24,26,28,30,17,19,21,23,25,27,29,31
-   os 2
+   os 2.2
 end
 
 # Kaypro II
@@ -380,6 +380,62 @@ diskdef 17153
   boottrk 4
   os 3
 end
+
+#DDR
+diskdef scp624
+  seclen 256
+  tracks 160
+  sectrk 16
+  blocksize 2048
+  maxdir 128
+  skew 0
+  boottrk 2
+  os 2.2
+end
+
+diskdef scp640
+  seclen 256
+  tracks 160
+  sectrk 16
+  blocksize 2048
+  maxdir 128
+  skew 0
+  boottrk 0
+  os 2.2
+end
+
+diskdef scp780
+  seclen 1024
+  tracks 160
+  sectrk 5
+  blocksize 2048
+  maxdir 128
+  skew 0
+  boottrk 2
+  os 2.2
+end
+
+diskdef scp800
+  seclen 1024
+  tracks 160
+  sectrk 5
+  blocksize 2048
+  maxdir 128
+  skew 0
+  boottrk 0
+  os 2.2
+end 
+
+diskdef z9001
+  seclen 1024
+  tracks 160
+  sectrk 5
+  blocksize 2048
+  maxdir 192
+  skew 0
+  boottrk 0
+  os 2.2
+end 
 
 # Visual Technology Visual 1050 computer
 diskdef v1050
@@ -509,7 +565,7 @@ diskdef nsfd
   maxdir 64
   skew 5  
   boottrk 2
-  os 2.2   
+  os 2.2
 end
 
 
@@ -527,7 +583,7 @@ diskdef nshd4
   maxdir 256
   skew 0  
   boottrk 0
-  os 2.2   
+  os 2.2
 end
 
 
@@ -545,7 +601,7 @@ diskdef nshd8
   maxdir 256
   skew 0  
   boottrk 0
-  os 2.2   
+  os 2.2
 end
 
 # Northstar Micro-Disk System MDS-A-D 175
@@ -582,7 +638,7 @@ diskdef osborne1
    blocksize 1024
    maxdir 64
    boottrk 3
-   os 2
+   os 2.2
 end
 
 # Osborne Nuevo/Vixen/4
@@ -594,7 +650,7 @@ diskdef osborne4
    maxdir 128
    skew 2
    boottrk 2
-   os 2
+   os 2.2
 end
 
 # Lobo Max-80 8" CP/M 2
@@ -621,7 +677,7 @@ diskdef lobo3
   os 3
 end
 
-# PRO CP/M RZ50 DZ format, experimental
+# PRO CP/M RZ50 DZ format (Perhaps only 79 tracks should be used?)
 diskdef dec_pro
   seclen 512
   tracks 80
@@ -630,5 +686,566 @@ diskdef dec_pro
   maxdir 128
   skew 2
   boottrk 2
+  os 2.2
+end
+
+# TDOS with DateStamper
+diskdef tdos-ds
+  seclen 1024
+  tracks 77
+  sectrk 16
+  blocksize 2048
+  maxdir 256
+  skew 0
+  boottrk 1
+  os zsys
+end
+
+# The following entires are tested and working
+# Most of the images are either from Don Maslin's archive or from
+# Dave Dunfield's site, but not all - they are noted as well as
+# their size.
+
+# PMC Micromate
+# Dave Dunfield's Imagedisk information from DSK conversion from IMD:
+# IMageDisk Utility 1.18 / Mar 07 2012
+# IMD 1.14: 10/03/2007 11:13:27
+# PMC-101 MicroMate
+# CP/M Plus
+# System Master
+# Assuming 1:1 for Binary output
+# 0/0 250 kbps DD  5x1024
+# 80 tracks(40/40), 400 sectors (12 Compressed)
+# Entry derived from above - image size = 409,600, from Dave Dunfield
+diskdef pmc101
+  seclen 1024
+  tracks 80
+  sectrk 5
+  blocksize 2048
+  maxdir 128
+  skew 0
+  boottrk 2
+  os 3
+end
+  
+# BEGIN td143ssdd8  Turbo Dos 1.43 - SSDD 8" - 512 x 16
+# Test OK - image size = 630,784, from Don Maslin's archive
+diskdef td143ssdd8
+  seclen 512
+  tracks 77
+  sectrk 9
+  blocksize 1024
+  maxdir 64
+  skew 0
+  boottrk 0
+  os 2.2
+# DENSITY MFM ,LOW 
+end
+
+# BEGIN headsdd8  Heath H89, Magnolia CP/M - SSDD 8" - 512 x 16
+# Test OK - image size = 630,784, from Don Maslin's archive
+diskdef heassdd8
+  seclen 512
+  tracks 77
+  sectrk 16
+  blocksize 2048
+  maxdir 128
+  skew 0
+  boottrk 2
+  os 2.2
+# DENSITY MFM ,LOW 
+end
+
+# Morrow Designs Micro-Decision         DOUBLE
+# 64k CP/M Vers. 2.2 Rev.2.3            SIDED
+# Copyright '76, '77, '78, '79, '80
+# Digital Research
+# Copyright 1982,1983 Morrow Designs, Inc.
+# Assuming 1:1 for Binary output
+#  0/0 250 kbps DD  5x1024
+# 80 tracks(40/40), 400 sectors (128 Compressed)
+# Entry derived from above data
+# Test OK - image siae = 409600, from Dave Dunfield
+diskdef mordsdd
+  seclen 1024
+  tracks 80
+  sectrk 5
+  blocksize 2048
+  maxdir 128
+  skew 3
+  boottrk 2
+  OS 2.2
+end
+
+
+# BEGIN morsddd Morrow MD2 - SSDD 48 tpi 5.25" - 1024 x 5
+# Test OK - image size = 204,800, from Don Maslin's archive
+# Also tested with image from Dave Dunfield
+diskdef morsddd
+  seclen 1024
+  tracks 40
+  sectrk 5
+  blocksize 2048
+  maxdir 128
+  skew 3
+  boottrk 2
+  os 2.2
+# DENSITY MFM ,LOW 
+# BSH 4 BLM 15 EXM 1 DSM 94 DRM 127 AL0 0C0H AL1 0 OFS 2
+end
+
+# BEGIN osb1sssd  Osborne 1 - SSSD 48 tpi 5.25" - 256 x 10
+# Test OK - image size = 102,400, from Don Maslin's archive
+diskdef osb1sssd
+  seclen 256
+  tracks 40
+  sectrk 10
+  blocksize 2048
+  maxdir 64
+  skew 2
+  boottrk 3
+  os 2.2
+# DENSITY MFM ,LOW 
+# BSH 4 BLM 15 EXM 1 DSM 45 DRM 63 AL0 080H AL1 0 OFS 3
+end
+
+# BEGIN ampdsdd  Ampro - DSDD 48 tpi 5.25" - 512 x 10
+# Test OK - image size = 409,600, from Don Maslin's archive
+diskdef ampdsdd
+  seclen 512
+  tracks 80
+  sectrk 10
+  blocksize 2048
+  maxdir 128
+  skew 0
+  boottrk 2
+  os 2.2
+# DENSITY MFM ,LOW 
+# BSH 4 BLM 15 EXM 1 DSM 194 DRM 127 AL0 0C0H AL1 0 OFS 2
+end
+
+# BEGIN ampdsdd80  Ampro - DSDD 96 tpi 5.25" - 512 x 10
+# Test OK - image size = 819,200, from Don Maslin's archive
+diskdef ampdsdd80
+  seclen 512
+  tracks 160
+  sectrk 10
+  blocksize 2048
+  maxdir 128
+  skew 0
+  boottrk 2
+  os 2.2
+# DENSITY MFM ,LOW 
+# BSH 4 BLM 15 EXM 1 DSM 194 DRM 127 AL0 0C0H AL1 0 OFS 2
+end
+
+# BEGIN altdsdd  Altos - DSDD 5" - 512 x 9
+# Test OK - both CP/M and MP/M - image size = 737,280, from Dave Dunfield
+diskdef altdsdd
+  seclen 512
+  tracks 160
+  sectrk 9
+  blocksize 4096
+  maxdir 177
+  skew 0
+  boottrk 2
+  os 3
+# DENSITY MFM ,HIGH 
+# BSH 5 BLM 31 EXM 3 DSM 176 DRM 176 AL0 0C0H AL1 0 OFS 2
+end
+
+# BEGIN trsomsssd  TRS-80 Model 1, Omikron CP/M - SSSD 48 tpi 5.25" - 128 x 18
+# Test OK - image size = 80,640, from TRS-80 Yahoo Group posting
+diskdef trsomsssd
+  seclen 128
+  tracks 35
+  sectrk 18
+  blocksize 1024
+  maxdir 64
+  skew 4
+  boottrk 3
+  os 2.2
+# DENSITY FM ,LOW 
+# BSH 3 BLM 7 EXM 0 DSM 71 DRM 63 AL0 0C0H AL1 0 OFS 3
+end
+
+# Memotech type 03, ie: 3.5" or 5.25", D/S, D/D, S/T
+# 40 tracks, 2 sides, 16 sectors/track, 256 bytes/sector
+# Bytes on the media = 2*40*16*256 = 327680
+# CP/M sees 26 128 byte records per track (similar to 8" disks).
+# Tracks = 327680/(26*128) = 98
+# Data is in 2048 byte blocks, on track 2 onwards
+# Blocks = ((98-2)*26*128)/2048 = 156, which agrees with DPB
+
+diskdef memotech-type03
+  seclen 128
+  tracks 98
+  sectrk 26
+  blocksize 2048
+  maxdir 64
+  skew 1
+  boottrk 2
+  os 2.2
+end
+
+# Memotech type 07, ie: 3.5" or 5.25", D/S, D/D, D/T
+# 80 tracks, 2 sides, 16 sectors/track, 256 bytes/sector
+# Bytes on the media = 2*80*16*256 = 655360
+# CP/M sees 26 128 byte records per track (similar to 8" disks).
+# Tracks = 655360/(26*128) = 196
+# Data is in 2048 byte blocks, on track 2 onwards
+# Blocks = ((196-2)*26*128)/2048 = 315, which agrees with DPB
+
+diskdef memotech-type07
+  seclen 128
+  tracks 196
+  sectrk 26
+  blocksize 2048
+  maxdir 128
+  skew 1
+  boottrk 2
+  os 2.2
+end
+
+# Memotech type 43, ie: 1MB Silicon Disc
+# CP/M sees 26 128 byte records per track
+# Note: Unlike common practice with real physical disks, with real geometry,
+#       the DPB for Silicon Discs includes blocks on the last incomplete track
+# Tracks = 1048576/(26*128) = 315.07
+# Data is in 4096 byte blocks, on track 2 onwards
+# Blocks = (1048576-2*26*128)/4096 = 254, which agrees with DPB
+# Blocks = ((315-2)*26*128)/4096 = 254, so we don't need the 0.07 track
+diskdef memotech-type43
+  seclen 128
+  tracks 315
+  sectrk 26
+  blocksize 4096
+  maxdir 256
+  skew 1
+  boottrk 2
+  os 2.2
+end
+
+# Memotech type 47, ie: 2MB Silicon Disc
+# CP/M sees 26 128 byte records per track
+# Note: Unlike common practice with real physical disks, with real geometry,
+#       the DPB for Silicon Discs includes blocks on the last incomplete track
+# Tracks = 2097152/(26*128) = 630.15
+# Data is in 4096 byte blocks, on track 2 onwards
+# Blocks = (2097152-2*26*128)/4096 = 510, which agrees with DPB
+# Blocks = ((630-2)*26*128)/4096 = 510, so we don't need the 0.15 track
+diskdef memotech-type47
+  seclen 128
+  tracks 630
+  sectrk 26
+  blocksize 4096
+  maxdir 256
+  skew 1
+  boottrk 2
+  os 2.2
+end
+
+# Memotech type 4B, ie: 4MB Silicon Disc
+# CP/M sees 26 128 byte records per track
+# Note: Unlike common practice with real physical disks, with real geometry,
+#       the DPB for Silicon Discs includes blocks on the last incomplete track
+# Tracks = 4194304/(26*128) = 1260.3
+# Data is in 4096 byte blocks, on track 2 onwards
+# Blocks = (4194304-2*26*128)/4096 = 1022, which agrees with DPB
+# Blocks = ((1260-2)*26*128)/4096 = 1022, so we don't need the 0.3 track
+diskdef memotech-type4B
+  seclen 128
+  tracks 1260
+  sectrk 26
+  blocksize 4096
+  maxdir 512
+  skew 1
+  boottrk 2
+  os 2.2
+end
+
+# Memotech type 4F, ie: 8MB Silicon Disc
+# CP/M sees 26 128 byte records per track
+# Note: Unlike common practice with real physical disks, with real geometry,
+#       the DPB for Silicon Discs includes blocks on the last incomplete track
+# Tracks = 8388608/(26*128) = 2520.61
+# Data is in 4096 byte blocks, on track 2 onwards
+# Blocks = (8388608-2*26*128)/4096 = 2046, which agrees with DPB
+# Blocks = ((2520-2)*26*128)/4096 = 2045, so we need the extra 0.61 track
+diskdef memotech-type4F
+  seclen 128
+  tracks 2521
+  sectrk 26
+  blocksize 4096
+  maxdir 512
+  skew 1
+  boottrk 2
+  os 2.2
+end
+
+# Memotech type 18, ie: 8MB SD Card
+# CP/M sees 26 128 byte records per track
+# Note: Unlike common practice with real physical disks, with real geometry,
+#       the DPB for SD Cards includes blocks on the last incomplete track
+# Tracks = 8388608/(26*128) = 2520.61
+# Data is in 4096 byte blocks, on track 2 onwards
+# Blocks = (8388608-2*26*128)/4096 = 2046, which agrees with DPB
+# Blocks = ((2520-2)*26*128)/4096 = 2045, so we need the extra 0.61 track
+diskdef memotech-type18
+  seclen 128
+  tracks 2521
+  sectrk 26
+  blocksize 4096
+  maxdir 512
+  skew 1
+  boottrk 2
+  os 2.2
+end
+
+# Memotech type 19, ie: 8MB SD Card
+diskdef memotech-type19
+  seclen 128
+  tracks 2521
+  sectrk 26
+  blocksize 4096
+  maxdir 512
+  skew 1
+  boottrk 2
+  os 2.2
+  offset 8M
+end
+
+# Memotech type 1A, ie: 8MB SD Card
+diskdef memotech-type1A
+  seclen 128
+  tracks 2521
+  sectrk 26
+  blocksize 4096
+  maxdir 512
+  skew 1
+  boottrk 2
+  os 2.2
+  offset 16M
+end
+
+# Memotech type 1B, ie: 8MB SD Card
+diskdef memotech-type1B
+  seclen 128
+  tracks 2521
+  sectrk 26
+  blocksize 4096
+  maxdir 512
+  skew 1
+  boottrk 2
+  os 2.2
+  offset 24M
+end
+
+# Memotech type 1C, ie: 8MB SD Card
+diskdef memotech-type1C
+  seclen 128
+  tracks 2521
+  sectrk 26
+  blocksize 4096
+  maxdir 512
+  skew 1
+  boottrk 2
+  os 2.2
+  offset 32M
+end
+
+# Memotech type 1D, ie: 8MB SD Card
+diskdef memotech-type1D
+  seclen 128
+  tracks 2521
+  sectrk 26
+  blocksize 4096
+  maxdir 512
+  skew 1
+  boottrk 2
+  os 2.2
+  offset 40M
+end
+
+# Memotech type 1E, ie: 8MB SD Card
+diskdef memotech-type1E
+  seclen 128
+  tracks 2521
+  sectrk 26
+  blocksize 4096
+  maxdir 512
+  skew 1
+  boottrk 2
+  os 2.2
+  offset 48M
+end
+
+# Memotech type 1F, ie: 8MB SD Card
+diskdef memotech-type1F
+  seclen 128
+  tracks 2521
+  sectrk 26
+  blocksize 4096
+  maxdir 512
+  skew 1
+  boottrk 2
+  os 2.2
+  offset 56M
+end
+
+# Memotech type 50, ie: 256KB RAM Disc
+# CP/M sees 26 128 byte records per track
+# Note: Unlike common practice with real physical disks, with real geometry,
+#       the DPB for RAM Discs includes blocks on the last incomplete track
+# Tracks = 262144/(26*128) = 78.76
+# Data is in 1024 byte blocks, on track 2 onwards
+# Blocks = (262144-2*26*128)/1024 = 249, which agrees with DPB 
+# Blocks = ((78-2)*26*128)/1024 = 247, so we need the extra 0.76 track
+diskdef memotech-type50
+  seclen 128
+  tracks 79
+  sectrk 26
+  blocksize 1024
+  maxdir 64
+  skew 1
+  boottrk 2
+  os 2.2
+end
+
+# Memotech type 51, ie: 512KB RAM Disc
+# CP/M sees 26 128 byte records per track
+# Note: Unlike common practice with real physical disks, with real geometry,
+#       the DPB for RAM Discs includes blocks on the last incomplete track
+# Tracks = 524288/(26*128) = 157.53
+# Data is in 2048 byte blocks, on track 2 onwards
+# Blocks = (524288-2*26*128)/2048 = 252, which agrees with DPB
+# Blocks = ((157-2)*26*128)/2048 = 251, so we need the extra 0.53 track
+diskdef memotech-type51
+  seclen 128
+  tracks 158
+  sectrk 26
+  blocksize 2048
+  maxdir 128
+  skew 1
+  boottrk 2
+  os 2.2
+end
+
+# Memotech type 51, as used in Italy, ie: 480KB RAM Disc
+# CP/M sees 26 128 byte records per track
+# Note: Unlike common practice with real physical disks, with real geometry,
+#       the DPB for RAM Discs includes blocks on the last incomplete track
+# Tracks = 491520/(26*128) = 147.69
+# Data is in 2048 byte blocks, on track 2 onwards
+# Blocks = (491520-2*26*128)/2048 = 236, which agrees with DPB
+# Blocks = ((147-2)*26*128)/2048 = 235, so we need the extra 0.69 track
+diskdef memotech-type51-italy
+  seclen 128
+  tracks 148
+  sectrk 26
+  blocksize 2048
+  maxdir 128
+  skew 1
+  boottrk 2
+  os 2.2
+end
+
+# Memotech type 51, after S2R64.COM, ie: 448KB RAM Disc
+# CP/M sees 26 128 byte records per track
+# Note: Unlike common practice with real physical disks, with real geometry,
+#       the DPB for RAM Discs includes blocks on the last incomplete track
+# Tracks = 458752/(26*128) = 137.84
+# Data is in 2048 byte blocks, on track 2 onwards
+# Blocks = (458752-2*26*128)/2048 = 220, which agrees with DPB, after S2R64.COM
+# Blocks = ((137-2)*26*128)/2048 = 219, so we need the extra 0.84 track
+diskdef memotech-type51-s2r64
+  seclen 128
+  tracks 138
+  sectrk 26
+  blocksize 2048
+  maxdir 128
+  skew 1
+  boottrk 2
+  os 2.2
+end
+
+# Memotech type 51, after S2R.COM, ie: 144KB RAM Disc
+# CP/M sees 26 128 byte records per track
+# Note: Unlike common practice with real physical disks, with real geometry,
+#       the DPB for RAM Discs includes blocks on the last incomplete track
+# Tracks = 147456/(26*128) = 44.3
+# Data is in 2048 byte blocks, on track 2 onwards
+# Blocks = (147456-2*26*128)/2048 = 68, which agrees with DPB, after S2R.COM
+# Blocks = ((44-2)*26*128)/2048 = 68, so we don't need the extra 0.3 track
+diskdef memotech-type51-s2r
+  seclen 128
+  tracks 44
+  sectrk 26
+  blocksize 2048
+  maxdir 128
+  skew 1
+  boottrk 2
+  os 2.2
+end
+
+# Memotech type 52, ie: 320KB RAM Disc
+# Added for REMEMOTECH
+# CP/M sees 26 128 byte records per track
+# Note: Unlike common practice with real physical disks, with real geometry,
+#       the DPB for RAM Discs includes blocks on the last incomplete track
+# Tracks = 327680/(26*128) = 98.46
+# Data is in 2048 byte blocks, on track 2 onwards
+# Blocks = (327680-2*26*128)/2048 = 156
+# Blocks = ((98-2)*26*128)/2048 = 156, so we don't need the extra 0.46 track
+# This type very deliberately and conveniently exactly matches type 03
+diskdef memotech-type52
+  seclen 128
+  tracks 98
+  sectrk 26
+  blocksize 2048
+  maxdir 64
+  skew 1
+  boottrk 2
+  os 2.2
+end
+
+# Research Machines 380Z/480Z 5.25" "Single Density" or "MDS" format.
+# All tracks are formatted FM 16x128.
+diskdef rm-sd
+  seclen 128
+  tracks 40
+  sectrk 16
+  blocksize 1024
+  maxdir 64
+  skew 3
+  boottrk 3
+  os 2.2
+end
+
+# Research Machines 380Z/480Z 5.25" "Double Density" or "MD" format.
+# Track 0 is formatted FM 16x128; 1+ are MFM 9x512.
+# If you're working with an image file, make sure that track 0 is
+# padded to be the same size as the other tracks.
+diskdef rm-dd
+  seclen 512
+  tracks 40
+  sectrk 9
+  blocksize 1024
+  maxdir 64
+  skew 5
+  boottrk 3
+  os 2.2
+end
+
+# Research Machines 380Z/480Z 5.25" "Quad Density" or "MQ" format.
+# Track 0 is formatted FM 16x128; 1+ are MFM 9x512.
+diskdef rm-qd
+  seclen 512
+  tracks 80
+  sectrk 9
+  blocksize 2048
+  maxdir 128
+  skew 5
+  boottrk 3
   os 2.2
 end

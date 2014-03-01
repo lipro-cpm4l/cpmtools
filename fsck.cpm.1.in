@@ -25,6 +25,9 @@ invalid time stamp mode).  The second pass checks extent connectivity
 .SH OPTIONS .\"{{{
 .IP "\fB\-f\fP \fIformat\fP"
 Use the given CP/M disk \fIformat\fP instead of the default format.
+.IP "\fB\-T\fP \fIlibdsk-type\fP"
+libdsk driver type, e.g. \fBtele\fP for Teledisk images or \fBraw\fP for raw images 
+(requires building cpmtools with support for libdsk).
 .IP "\fB\-n\fP"
 Open the file system read-only and do not repair any errors.
 .\"}}}

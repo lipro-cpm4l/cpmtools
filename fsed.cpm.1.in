@@ -19,6 +19,9 @@ self-explanatory.
 .SH OPTIONS .\"{{{
 .IP "\fB\-f\fP \fIformat\fP"
 Use the given CP/M disk \fIformat\fP instead of the default format.
+.IP "\fB\-T\fP \fIlibdsk-type\fP"
+libdsk driver type, e.g. \fBtele\fP for Teledisk images or \fBraw\fP for raw images 
+(requires building cpmtools with support for libdsk).
 .\"}}}
 .SH "RETURN VALUE" .\"{{{
 Upon successful completion, exit code 0 is returned.

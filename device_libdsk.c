@@ -13,14 +13,53 @@
 #endif
 /*}}}*/
 
+static const char *lookup_format(DSK_GEOMETRY *geom, const char *name)
+{
+  dsk_format_t fmt = FMT_180K;
+  const char *fname;
+
+  while (dg_stdformat(NULL, fmt, &fname, NULL) == DSK_ERR_OK)
+  {
+    if (!strcmp(name, fname))
+    {
+      dg_stdformat(geom, fmt, &fname, NULL);
+      return NULL;
+    }
+    ++fmt;
+  }
+  return "Unrecognised LibDsk geometry specification";
+}
+
 /* Device_open           -- Open an image file                      */ /*{{{*/
 const char *Device_open(struct Device *this, const char *filename, int mode, const char *deviceOpts)
 {
-  dsk_err_t e = dsk_open(&this->dev, filename, deviceOpts, NULL);
+  char *format;
+  char driverName[80];
+  const char *boo;
+
+  /* Assume driver name & format name both fit in 80 characters, rather than
+   * malloccing the exact size */
+  strncpy(driverName, deviceOpts, 79);
+  driverName[79] = 0;
+  format = strchr(driverName, ',');
+  if (format)
+  {
+    *format = 0;
+    ++format;
+  }
+  dsk_err_t e = dsk_open(&this->dev, filename, driverName, NULL);
   this->opened = 0;
   if (e) return dsk_strerror(e);
   this->opened = 1;
-  dsk_getgeom(this->dev, &this->geom); 
+  if (format) 
+  {
+    boo = lookup_format(&this->geom, format);
+    if (boo) return boo;
+  }
+  else 
+  {
+    dsk_getgeom(this->dev, &this->geom); 
+  }
   return NULL;
 }
 /*}}}*/

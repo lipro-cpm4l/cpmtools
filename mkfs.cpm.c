@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include "getopt_.h"
 #include "cpmfs.h"
@@ -21,7 +22,7 @@
 /*}}}*/
 
 /* mkfs -- make file system */ /*{{{*/
-static int mkfs(struct cpmSuperBlock *drive, const char *name, const char *label, char *bootTracks)
+static int mkfs(struct cpmSuperBlock *drive, const char *name, const char *format, const char *label, char *bootTracks, int timeStamps)
 {
   /* variables */ /*{{{*/
   int i;
@@ -53,7 +54,7 @@ static int mkfs(struct cpmSuperBlock *drive, const char *name, const char *label
   memset(buf,0xe5,128);
   bytes=drive->maxdir*32;
   if (bytes%trkbytes) bytes=((bytes+trkbytes)/trkbytes)*trkbytes;
-  if (drive->type==CPMFS_P2DOS || drive->type==CPMFS_DR3) buf[3*32]=0x21;
+  if (timeStamps && (drive->type==CPMFS_P2DOS || drive->type==CPMFS_DR3)) buf[3*32]=0x21;
   memcpy(firstbuf,buf,128);
   if (drive->type==CPMFS_DR3)
   {
@@ -64,21 +65,25 @@ static int mkfs(struct cpmSuperBlock *drive, const char *name, const char *label
     firstbuf[0]=0x20;
     for (i=0; i<11 && *label; ++i,++label) firstbuf[1+i]=toupper(*label&0x7f);
     while (i<11) firstbuf[1+i++]=' ';
-    firstbuf[12]=0x11; /* label set and first time stamp is creation date */
+    firstbuf[12]=timeStamps ? 0x11 : 0x01; /* label set and first time stamp is creation date */
     memset(&firstbuf[13],0,1+2+8);
-    time(&now);
-    t=localtime(&now);
-    min=((t->tm_min/10)<<4)|(t->tm_min%10);
-    hour=((t->tm_hour/10)<<4)|(t->tm_hour%10);
-    for (i=1978,days=0; i < 1900 + t->tm_year; ++i)
+    if (timeStamps)
     {
-      days+=365;
-      if (i%4==0 && (i%100!=0 || i%400==0)) ++days;
+      /* Stamp label. */
+      time(&now);
+      t=localtime(&now);
+      min=((t->tm_min/10)<<4)|(t->tm_min%10);
+      hour=((t->tm_hour/10)<<4)|(t->tm_hour%10);
+      for (i=1978,days=0; i < 1900 + t->tm_year; ++i)
+      {
+        days+=365;
+        if (i%4==0 && (i%100!=0 || i%400==0)) ++days;
+      }
+      days += t->tm_yday + 1;
+      firstbuf[24]=firstbuf[28]=days&0xff; firstbuf[25]=firstbuf[29]=days>>8;
+      firstbuf[26]=firstbuf[30]=hour;
+      firstbuf[27]=firstbuf[31]=min;
     }
-    days += t->tm_yday + 1;
-    firstbuf[24]=firstbuf[28]=days&0xff; firstbuf[25]=firstbuf[29]=days>>8;
-    firstbuf[26]=firstbuf[30]=hour;
-    firstbuf[27]=firstbuf[31]=min;
   }
   for (i=0; i < bytes; i += 128) if (write(fd, i==0 ? firstbuf : buf, 128)!=128)
   {
@@ -94,6 +99,55 @@ static int mkfs(struct cpmSuperBlock *drive, const char *name, const char *label
     return -1;
   }
   /*}}}*/
+  if (timeStamps && !(drive->type==CPMFS_P2DOS || drive->type==CPMFS_DR3)) /*{{{*/
+  {
+    int offset,j;
+    struct cpmInode ino, root;
+    static const char sig[] = "!!!TIME";
+    int records;
+    struct dsDate *ds;
+    struct cpmSuperBlock super;
+    const char *err;
+
+    if ((err=Device_open(&super.dev,name,O_RDWR,NULL)))
+    {
+      fprintf(stderr,"%s: can not open %s (%s)\n",cmd,name,err);
+      exit(1);
+    }
+    cpmReadSuper(&super,&root,format);
+
+    records=root.sb->maxdir/8;
+    if (!(ds=malloc(records*128)))
+    {
+      cpmUmount(&super);
+      return -1;
+    }
+    memset(ds,0,records*128);
+    offset=15;
+    for (i=0; i<records; i++)
+    {
+      for (j=0; j<7; j++,offset+=16)
+      {
+        *((char*)ds+offset) = sig[j];
+      }
+      /* skip checksum byte */
+      offset+=16;
+    }
+
+    /* Set things up so cpmSync will generate checksums and write the
+     * file.
+     */
+    if (cpmCreat(&root,"00!!!TIME&.DAT",&ino,0)==-1)
+    {
+      fprintf(stderr,"%s: Unable to create DateStamper file: %s\n",cmd,boo);
+      return -1;
+    }
+    root.sb->ds=ds;
+    root.sb->dirtyDs=1;
+    cpmUmount(&super);
+  }
+  /*}}}*/
+
   return 0;
 }
 /*}}}*/
@@ -108,12 +162,13 @@ int main(int argc, char *argv[]) /*{{{*/
   struct cpmSuperBlock drive;
   struct cpmInode root;
   const char *label="unlabeled";
+  int timeStamps=0;
   size_t bootTrackSize,used;
   char *bootTracks;
   const char *boot[4]={(const char*)0,(const char*)0,(const char*)0,(const char*)0};
 
   if (!(format=getenv("CPMTOOLSFMT"))) format=FORMAT;
-  while ((c=getopt(argc,argv,"b:f:L:h?"))!=EOF) switch(c)
+  while ((c=getopt(argc,argv,"b:f:L:th?"))!=EOF) switch(c)
   {
     case 'b':
     {
@@ -126,6 +181,7 @@ int main(int argc, char *argv[]) /*{{{*/
     }
     case 'f': format=optarg; break;
     case 'L': label=optarg; break;
+    case 't': timeStamps=1; break;
     case 'h':
     case '?': usage=1; break;
   }
@@ -135,7 +191,7 @@ int main(int argc, char *argv[]) /*{{{*/
 
   if (usage)
   {
-    fprintf(stderr,"Usage: %s [-f format] [-b boot] [-L label] image\n",cmd);
+    fprintf(stderr,"Usage: %s [-f format] [-b boot] [-L label] [-t] image\n",cmd);
     exit(1);
   }
   drive.dev.opened=0;
@@ -166,7 +222,7 @@ int main(int argc, char *argv[]) /*{{{*/
     used+=size;
     close(fd);
   }
-  if (mkfs(&drive,image,label,bootTracks)==-1)
+  if (mkfs(&drive,image,format,label,bootTracks,timeStamps)==-1)
   {
     fprintf(stderr,"%s: can not make new file system: %s\n",cmd,boo);
     exit(1);
