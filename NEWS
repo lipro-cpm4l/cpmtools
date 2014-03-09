@@ -1,0 +1,5 @@
+Changes since 2.16:
+
+o  Improved filesystem documentation
+o  Many new diskdefs
+o  device_win32.c fixed by Bill Buckels
