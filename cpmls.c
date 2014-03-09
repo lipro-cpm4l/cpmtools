@@ -372,7 +372,11 @@ int main(int argc, char *argv[])
 
   if (usage)
   {
+#if HAVE_LIBDSK_H
     fprintf(stderr,"Usage: %s [-f format] [-T libdsk-type] [-d|-D|-F|-A|[-l][-c][-i]] image [file ...]\n",cmd);
+#else
+    fprintf(stderr,"Usage: %s [-f format] [-d|-D|-F|-A|[-l][-c][-i]] image [file ...]\n",cmd);
+#endif
     exit(1);
   }
   /*}}}*/

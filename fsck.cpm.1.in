@@ -1,5 +1,5 @@
 .TH FSCK.CPM 1 "@UPDATED@" "CP/M tools" "User commands"
-.SH NAME ..\"{{{roff}}}\"{{{
+.SH NAME \"{{{roff}}}\"{{{
 fsck.cpm \- check a CP/M file system
 .\"}}}
 .SH SYNOPSIS .\"{{{
@@ -41,10 +41,11 @@ Any errors are indicated by exit code 1.
 CPMTOOLSFMT     Default format
 .\"}}}
 .SH DIAGNOSTICS .\"{{{
-.IP "\fIimage\fP: \fIused\fP/\fItotal\fP files (\fIn\fP.\fIn\fP% non-contiguos), \fIused\fP/\fItotal\fP blocks"
+.IP "\fIimage\fP: \fIused\fP/\fItotal\fP files (\fIn\fP.\fIn\fP% 
+non-contiguous), \fIused\fP/\fItotal\fP blocks"
 No inconsistencies could be found.  The number of used files actually
 is the number of used extents.  Since a file may use more than
-one extent, this may be greather than the actual number of files, but a
+one extent, this may be greater than the actual number of files, but a
 correct measure would not reflect how many files could still be created
 at most.  A file is considered fragmented, if sequential data blocks
 pointed to by the same extent do not have sequential block numbers.

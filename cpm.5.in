@@ -104,7 +104,7 @@ meaning:
 .sp
 F0: requires set wheel byte (Backgrounder II)
 .br
-F1: public file (P2DOS, ZSDOS), forground-only command (Backgrounder II)
+F1: public file (P2DOS, ZSDOS), foreground-only command (Backgrounder II)
 .br
 F2: date stamp (ZSDOS), background-only commands (Backgrounder II)
 .br
