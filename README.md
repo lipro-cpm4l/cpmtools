@@ -4,10 +4,9 @@
 cpmtools - Tools to access CP/M file systems
 ============================================
 
-The cpmtools 1.6 package allows to create, check, read and write CP/M file
-systems similar to the mtools package, which accesses DOS file systems.
-Beside the regular user commands, there is a file system editor (read-only
-for now).
+This package allows to access CP/M file systems similar to the well-known
+mtools package, which accesses MSDOS file systems. It can be used for file
+exchange with a Z80-PC simulator, but it works on floppy devices as well.
 
 Currently it contains:
 
