@@ -200,6 +200,7 @@ time stamp.
 1 byte minute in BCD format
 .sp
 .RE
+All time stamps are stored in local time.
 .\"}}}
 .SS "DateStamper time stamps" \"{{{
 The DateStamper software added functions to the BDOS to manage

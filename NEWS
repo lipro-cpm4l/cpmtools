@@ -1,12 +1,6 @@
-Changes since 2.17:
+Changes since 2.18:
 
-o  Make timestamps in mkfs.com optional and add date stamper creation
-o  Better cpm.5 documentation
-o  Updated config.guess
-o  Fixed error handling for corrupt images or diskdefs
-o  Fixed off by one bug in fsck not detecting a wrong block number
-o  Fixed too short directory buffer for directory sizes not matching
-   whole blocks
-o  Fixed default type of CP/M 3
-o  Added description of -T to manuals
-o  Added error check if reading the superblock fails
+o  More diskdefs entries
+o  New diskdefs option to set the libdsk format
+o  Fixed various warnings
+o  Fixed Makefile if building without curses

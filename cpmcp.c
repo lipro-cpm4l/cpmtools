@@ -259,7 +259,7 @@ int main(int argc, char *argv[])
           cpmOpen(&ino,&file,O_WRONLY);
           do
           {
-            int j;
+            unsigned int j;
 
             for (j=0; j<(sizeof(buf)/2) && (c=getc(ufp))!=EOF; ++j)
             {
@@ -267,7 +267,7 @@ int main(int argc, char *argv[])
               buf[j]=c;
             }
             if (text && c==EOF) buf[j++]='\032';
-            if (cpmWrite(&file,buf,j)!=j)
+            if (cpmWrite(&file,buf,j)!=(ssize_t)j)
             {
               fprintf(stderr,"%s: can not write %s: %s\n",cmd,dest,boo);
               ohno=1;

@@ -77,7 +77,9 @@ int main(int argc, char *argv[]) /*{{{*/
     if (!rc) rc = cpmAttrGet(&ino, &attrib);
     if (!rc)
     {
-        int n, m;
+        unsigned int n;
+        int m;
+
         m = 0;
 	for (n = 0; n < strlen(attrs); n++)
 	{

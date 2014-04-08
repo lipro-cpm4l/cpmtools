@@ -385,7 +385,7 @@ const char *Device_open(struct Device *sb, const char *filename, int mode, const
 }
 /*}}}*/
 /* Device_setGeometry    -- Set disk geometry                       */ /*{{{*/
-void Device_setGeometry(struct Device *this, int secLength, int sectrk, int tracks, off_t offset)
+const char * Device_setGeometry(struct Device *this, int secLength, int sectrk, int tracks, off_t offset, const char *libdskGeometry)
 {
   int n;
 
@@ -401,7 +401,7 @@ void Device_setGeometry(struct Device *this, int secLength, int sectrk, int trac
   {
       DRIVEPARAMS drvp;
       memset(&drvp, 0, sizeof(drvp));
-      if (GetDriveParams( this->hdisk, this->fd, &drvp )) return;
+      if (GetDriveParams( this->hdisk, this->fd, &drvp )) return "GetDriveParams failed";
 
       drvp.bytespersector  = secLength;
       drvp.sectorspertrack = sectrk;
@@ -448,6 +448,7 @@ void Device_setGeometry(struct Device *this, int secLength, int sectrk, int trac
   */
       SetDriveParams( this->hdisk, this->fd, &drvp );
   }
+  return NULL;
 }
 /*}}}*/
 /* Device_close          -- Close an image file                     */ /*{{{*/
