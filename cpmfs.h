@@ -141,7 +141,7 @@ struct cpmSuperBlock
   int skew;
   int boottrk;
   off_t offset;
-  unsigned int type;
+  int type;
   int size;
   int extents; /* logical extents per physical extent */
   struct PhysDirectoryEntry *dir;
@@ -157,6 +157,7 @@ struct cpmSuperBlock
   int dirtyDirectory;
   struct dsDate *ds;
   int dirtyDs;
+  char libdskGeometry[256];
 };
 
 struct cpmStatFS

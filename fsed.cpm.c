@@ -35,7 +35,7 @@ static struct tm *cpmtime(char lday, char hday, char hour, char min) /*{{{*/
   static struct tm tm;
   unsigned long days=(lday&0xff)|((hday&0xff)<<8);
   int d;
-  int md[12]={31,0,31,30,31,30,31,31,30,31,30,31};
+  unsigned int md[12]={31,0,31,30,31,30,31,31,30,31,30,31};
 
   tm.tm_sec=0;
   tm.tm_min=((min>>4)&0xf)*10+(min&0xf);
@@ -97,7 +97,8 @@ static void map(struct cpmSuperBlock *sb) /*{{{*/
 {
   const char *msg;
   char bmap[18*80];
-  int secmap,pos,sys,directory;
+  int secmap,sys,directory;
+  int pos;
 
   clear();
   msg="Data map";
@@ -124,7 +125,7 @@ static void map(struct cpmSuperBlock *sb) /*{{{*/
       {
         for (i=0; i<16; ++i)
         {
-          unsigned int sector;
+          int sector;
 
           sector=mapbuf[entry*32+16+i]&0xff;
           if (sb->size>=256) sector|=(((mapbuf[entry*32+16+ ++i]&0xff)<<8));
@@ -139,7 +140,7 @@ static void map(struct cpmSuperBlock *sb) /*{{{*/
     }
   }
 
-  for (pos=0; pos<sizeof(bmap); ++pos)
+  for (pos=0; pos<(int)sizeof(bmap); ++pos)
   {
     move(2+pos%18,pos/18);
     addch(bmap[pos]);
@@ -153,7 +154,7 @@ static void map(struct cpmSuperBlock *sb) /*{{{*/
 static void data(struct cpmSuperBlock *sb, const char *buf, unsigned long int pos) /*{{{*/
 {
   int offset=(pos%sb->secLength)&~0x7f;
-  int i;
+  unsigned int i;
 
   for (i=0; i<128; ++i)
   {
@@ -178,7 +179,7 @@ int main(int argc, char *argv[]) /*{{{*/
   struct cpmInode root;
   const char *format;
   int c,usage=0;
-  unsigned long pos;
+  off_t pos;
   chtype ch;
   int reload;
   char *buf;
@@ -284,7 +285,7 @@ int main(int argc, char *argv[]) /*{{{*/
       {
         case 'F': /* next 16 byte */ /*{{{*/
         {
-          if (pos+16<(drive.sectrk*drive.tracks*(unsigned long)drive.secLength))
+          if (pos+16<(drive.sectrk*drive.tracks*(off_t)drive.secLength))
           {
             if (pos/drive.secLength!=(pos+16)/drive.secLength) reload=1;
             pos+=16;
@@ -635,7 +636,7 @@ int main(int argc, char *argv[]) /*{{{*/
       {
         case 'F': /* next entry */ /*{{{*/
         {
-          if (pos+32<(drive.sectrk*drive.tracks*(unsigned long)drive.secLength))
+          if (pos+32<(drive.sectrk*drive.tracks*(off_t)drive.secLength))
           {
             if (pos/drive.secLength!=(pos+32)/drive.secLength) reload=1;
             pos+=32;
@@ -671,7 +672,7 @@ int main(int argc, char *argv[]) /*{{{*/
     {
       case 'n': /* next record */ /*{{{*/
       {
-        if (pos+128<(drive.sectrk*drive.tracks*(unsigned long)drive.secLength))
+        if (pos+128<(drive.sectrk*drive.tracks*(off_t)drive.secLength))
         {
           if (pos/drive.secLength!=(pos+128)/drive.secLength) reload=1;
           pos+=128;

@@ -23,12 +23,13 @@ const char *Device_open(struct Device *this, const char *filename, int mode, con
 }
 /*}}}*/
 /* Device_setGeometry    -- Set disk geometry                       */ /*{{{*/
-void Device_setGeometry(struct Device *this, int secLength, int sectrk, int tracks, off_t offset)
+const char *Device_setGeometry(struct Device *this, int secLength, int sectrk, int tracks, off_t offset, const char *libdskGeometry)
 {
   this->secLength=secLength;
   this->sectrk=sectrk;
   this->tracks=tracks;
   this->offset=offset;
+  return NULL;
 }
 /*}}}*/
 /* Device_close          -- Close an image file                     */ /*{{{*/

@@ -1,8 +1,8 @@
 AC_INIT(cpmfs.c)
 AC_CONFIG_HEADER(config.h)
 AC_CANONICAL_HOST
-VERSION=2.18
-UPDATED='April 5, 2014'
+VERSION=2.19
+UPDATED='April 27, 2014'
 
 DEVICE="posix"
 
@@ -23,7 +23,7 @@ AC_PROG_CPP
 
 if test "$GCC" = yes
 then
-  CFLAGS="${CFLAGS} ${EXTRA_GCFLAGS}-pipe -Wall -Wno-unused -Wshadow -Wbad-function-cast -Wmissing-prototypes -Wstrict-prototypes -Wcast-align -Wcast-qual -Wpointer-arith -Wwrite-strings -Wmissing-declarations -Wnested-externs -Wundef -pedantic -fno-common"
+  CFLAGS="${CFLAGS} ${EXTRA_GCFLAGS}-pipe -Wall -Wextra -Wno-unused-parameter -Wno-unused -Wshadow -Wbad-function-cast -Wmissing-prototypes -Wstrict-prototypes -Wcast-align -Wcast-qual -Wpointer-arith -Wwrite-strings -Wmissing-declarations -Wnested-externs -Wundef -pedantic -fno-common"
   LDFLAGS="${LDFLAGS} ${EXTRA_GLDFLAGS}-g"
 else
   CFLAGS="${CFLAGS} ${EXTRA_CFLAGS}"
