@@ -25,12 +25,12 @@
 static int mkfs(struct cpmSuperBlock *drive, const char *name, const char *format, const char *label, char *bootTracks, int timeStamps)
 {
   /* variables */ /*{{{*/
-  int i;
+  unsigned int i;
   char buf[128];
   char firstbuf[128];
   int fd;
-  int bytes;
-  int trkbytes;
+  unsigned int bytes;
+  unsigned int trkbytes;
   /*}}}*/
 
   /* open image file */ /*{{{*/
@@ -43,7 +43,7 @@ static int mkfs(struct cpmSuperBlock *drive, const char *name, const char *forma
   /* write system tracks */ /*{{{*/
   /* this initialises only whole tracks, so it skew is not an issue */
   trkbytes=drive->secLength*drive->sectrk;
-  for (i=0; i<trkbytes*drive->boottrk; i+=drive->secLength) if (write(fd, bootTracks+i, drive->secLength)!=drive->secLength)
+  for (i=0; i<trkbytes*drive->boottrk; i+=drive->secLength) if (write(fd, bootTracks+i, drive->secLength)!=(ssize_t)drive->secLength)
   {
     boo=strerror(errno);
     close(fd);
@@ -69,15 +69,17 @@ static int mkfs(struct cpmSuperBlock *drive, const char *name, const char *forma
     memset(&firstbuf[13],0,1+2+8);
     if (timeStamps)
     {
+      int year;
+
       /* Stamp label. */
       time(&now);
       t=localtime(&now);
       min=((t->tm_min/10)<<4)|(t->tm_min%10);
       hour=((t->tm_hour/10)<<4)|(t->tm_hour%10);
-      for (i=1978,days=0; i < 1900 + t->tm_year; ++i)
+      for (year=1978,days=0; year<1900+t->tm_year; ++year)
       {
         days+=365;
-        if (i%4==0 && (i%100!=0 || i%400==0)) ++days;
+        if (year%4==0 && (year%100!=0 || year%400==0)) ++days;
       }
       days += t->tm_yday + 1;
       firstbuf[24]=firstbuf[28]=days&0xff; firstbuf[25]=firstbuf[29]=days>>8;
@@ -85,7 +87,7 @@ static int mkfs(struct cpmSuperBlock *drive, const char *name, const char *forma
       firstbuf[27]=firstbuf[31]=min;
     }
   }
-  for (i=0; i < bytes; i += 128) if (write(fd, i==0 ? firstbuf : buf, 128)!=128)
+  for (i=0; i<bytes; i+=128) if (write(fd, i==0 ? firstbuf : buf, 128)!=128)
   {
     boo=strerror(errno);
     close(fd);
@@ -104,7 +106,7 @@ static int mkfs(struct cpmSuperBlock *drive, const char *name, const char *forma
     int offset,j;
     struct cpmInode ino, root;
     static const char sig[] = "!!!TIME";
-    int records;
+    unsigned int records;
     struct dsDate *ds;
     struct cpmSuperBlock super;
     const char *err;
