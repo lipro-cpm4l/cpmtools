@@ -1,6 +1,3 @@
-Changes since 2.18:
+Changes since 2.19:
 
-o  More diskdefs entries
-o  New diskdefs option to set the libdsk format
-o  Fixed various warnings
-o  Fixed Makefile if building without curses
+o  Fixed bug in cpmfs leading to wrongly allocated blocks

@@ -817,7 +817,7 @@ static int diskdefReadSuper(struct cpmSuperBlock *d, const char *format)
 	else if (strcmp(argv[0], "libdsk:format")==0)
         {
           strncpy(d->libdskGeometry, argv[1], sizeof(d->libdskGeometry) - 1);
-          d->libdskGeometry[sizeof(d->libdskGeometry - 1)] = 0;
+          d->libdskGeometry[sizeof(d->libdskGeometry) - 1] = 0;
         }
       }
       else if (argc>0 && argv[0][0]!='#' && argv[0][0]!=';')
