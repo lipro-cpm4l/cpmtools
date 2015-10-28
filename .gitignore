@@ -1,0 +1,7 @@
+*.o
+cpmcp
+cpmls
+cpmrm
+fsck.cpm
+fsed.cpm
+mkfs.cpm
