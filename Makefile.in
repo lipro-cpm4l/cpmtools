@@ -83,14 +83,14 @@ install:	all
 		[ -d $(MANDIR)/man1 ] || $(INSTALL) -m 755 -d $(MANDIR)/man1
 		[ -d $(MANDIR)/man5 ] || $(INSTALL) -m 755 -d $(MANDIR)/man5
 		[ -d $(BINDIR) ] || $(INSTALL) -m 755 -d $(BINDIR)
-		$(INSTALL) -s -m 755 cpmls $(BINDIR)/cpmls
-		$(INSTALL) -s -m 755 cpmcp $(BINDIR)/cpmcp
-		$(INSTALL) -s -m 755 cpmrm $(BINDIR)/cpmrm
-		$(INSTALL) -s -m 755 cpmchmod $(BINDIR)/cpmchmod
-		$(INSTALL) -s -m 755 cpmchattr $(BINDIR)/cpmchattr
-		$(INSTALL) -s -m 755 mkfs.cpm $(BINDIR)/mkfs.cpm
-		$(INSTALL) -s -m 755 fsck.cpm $(BINDIR)/fsck.cpm
-		[ "$(FSED_CPM)" == '' ] || $(INSTALL) -s -m 755 fsed.cpm $(BINDIR)/fsed.cpm
+		$(INSTALL) -m 755 cpmls $(BINDIR)/cpmls
+		$(INSTALL) -m 755 cpmcp $(BINDIR)/cpmcp
+		$(INSTALL) -m 755 cpmrm $(BINDIR)/cpmrm
+		$(INSTALL) -m 755 cpmchmod $(BINDIR)/cpmchmod
+		$(INSTALL) -m 755 cpmchattr $(BINDIR)/cpmchattr
+		$(INSTALL) -m 755 mkfs.cpm $(BINDIR)/mkfs.cpm
+		$(INSTALL) -m 755 fsck.cpm $(BINDIR)/fsck.cpm
+		[ "$(FSED_CPM)" == '' ] || $(INSTALL) -m 755 fsed.cpm $(BINDIR)/fsed.cpm
 		$(INSTALL_DATA) diskdefs $(datarootdir)/diskdefs
 		$(INSTALL_DATA) cpmls.1 $(MANDIR)/man1/cpmls.1
 		$(INSTALL_DATA) cpmcp.1 $(MANDIR)/man1/cpmcp.1
