@@ -378,7 +378,12 @@ diskdef fdd3000_2
   skew 5
 end
 
-# Robotron 1715
+############################
+# GdR/Robotron scp disks
+############################
+
+# robotron PC1715 SCP 185k (40*1* 5,1024 6 OFS 2k DIR) 5.25"
+# setfdprm /dev/fd1 ds dd ssize=1024 cyl=40 sect=5 head=1 dtr=1 fm=0
 diskdef 1715
   seclen 1024
   tracks 40
@@ -390,7 +395,8 @@ diskdef 1715
   os 2.2
 end
 
-# Robotron 1715 with SCP3
+# robotron PC1715 SCP3 760k (80*2* 5,1024 8 OFS 4k DIR) 5.25"
+# setfdprm /dev/fd1 ds dd ssize=1024 cyl=80 sect=5 head=2 dtr=1 fm=0
 diskdef 17153
   seclen 1024
   tracks 160
@@ -402,7 +408,8 @@ diskdef 17153
   os 3
 end
 
-#DDR
+# robotron PC1715 SCP 624k (80*2* 16,256 8 OFS 4k DIR) 5.25"
+# setfdprm /dev/fd1 ds dd ssize=256 cyl=80 sect=16 head=2 dtr=1 fm=0
 diskdef scp624
   seclen 256
   tracks 160
@@ -410,10 +417,13 @@ diskdef scp624
   blocksize 2048
   maxdir 128
   skew 0
-  boottrk 2
+  boottrk 4
   os 2.2
+  libdsk:format scp640
 end
 
+# robotron PC1715 SCP 640k (80*2* 16,256 0 OFS 4k DIR) 5.25"
+# setfdprm /dev/fd1 ds dd ssize=256 cyl=80 sect=16 head=2 dtr=1 fm=0
 diskdef scp640
   seclen 256
   tracks 160
@@ -423,8 +433,11 @@ diskdef scp640
   skew 0
   boottrk 0
   os 2.2
+  libdsk:format scp640
 end
 
+# robotron PC1715 SCP 780k (80*2* 5,1024 8 OFS 4k DIR) 5.25"
+# setfdprm /dev/fd1 ds dd ssize=1024 cyl=80 sect=5 head=2 dtr=1 fm=0
 diskdef scp780
   seclen 1024
   tracks 160
@@ -432,10 +445,13 @@ diskdef scp780
   blocksize 2048
   maxdir 128
   skew 0
-  boottrk 2
+  boottrk 4
   os 2.2
+  libdsk:format scp800
 end
 
+# robotron PC1715 SCP 800k (80*2* 5,1024 0 OFS 4k DIR) 5.25"
+# setfdprm /dev/fd1 ds dd ssize=1024 cyl=80 sect=5 head=2 dtr=1 fm=0
 diskdef scp800
   seclen 1024
   tracks 160
@@ -445,8 +461,11 @@ diskdef scp800
   skew 0
   boottrk 0
   os 2.2
+  libdsk:format scp800
 end 
 
+# robotron Z9001 800k (80*2* 5,1024 0 OFS 6k DIR) 5.25"
+# setfdprm /dev/fd1 ds dd ssize=1024 cyl=80 sect=5 head=2 dtr=1 fm=0
 diskdef z9001
   seclen 1024
   tracks 160
