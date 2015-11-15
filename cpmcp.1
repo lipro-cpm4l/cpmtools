@@ -1,0 +1,69 @@
+.TH CPMCP 1 "August 30, 1997" "CP/M tools" "User commands"
+.SH NAME \"{{{roff}}}\"{{{
+cpmcp \- copy files from and to CP/M disks
+.\"}}}
+.SH SYNOPSIS \"{{{
+.ad l
+.B cpmcp
+.RB [ \-f
+.IR format ]
+.RB [ \-t ]
+.I image
+\fIuser\fP\fB:\fP\fIfile\fP \fIfile\fP
+.br
+.B cpmcp
+.RB [ \-f
+.IR format ]
+.RB [ \-t ]
+.I image
+\fIuser\fP\fB:\fP\fIfile\fP ... \fIdirectory\fP
+.br
+.B cpmcp
+.RB [ \-f
+.IR format ]
+.RB [ \-t ]
+.I image
+\fIfile\fP \fIuser\fP\fB:\fP\fIfile\fP
+.br
+.B cpmcp
+.RB [ \-f
+.IR format ]
+.RB [ \-t ]
+.I image
+\fIfile\fP ... \fIuser\fP\fB:\fP
+.ad b
+.\"}}}
+.SH DESCRIPTION \"{{{
+\fBcpmcp\fP copies one or more files to or from a CP/M disk.  When copying
+multiple files, the last argument must be a drive or directory.  The drive
+letter does not matter because the device is specified by the image, it is
+only used to specify which direction you want to copy.  The user number is
+specified after the drive letter, if omitted user 0 is used.
+.PP
+You can use \fB*\fP and \fB?\fP in CP/M file names, which have the same
+meaning in
+.IR sh (1)
+file name patterns.
+.\"}}}
+.SH OPTIONS \"{{{
+.IP "\fB\-f\fP \fIformat\fP"
+Use the given CP/M disk \fIformat\fP instead of the default format.
+.IP \fB\-t\fP
+Convert text files between CP/M and UNIX conventions.
+.\"}}}
+.SH "RETURN VALUE" \"{{{
+Upon successful completion, exit code 0 is returned.
+.\"}}}
+.SH ERRORS \"{{{
+Any errors are indicated by exit code 1.
+.\"}}}
+.SH FILES \"{{{
+diskdef	CP/M disk format definitions
+.\"}}}
+.SH AUTHOR \"{{{
+Michael Haardt (michael@moria.de)
+.\"}}}
+.SH "SEE ALSO" \"{{{
+.IR cpmls (1),
+.IR cpm (5)
+.\"}}}

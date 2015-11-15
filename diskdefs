@@ -1,0 +1,17 @@
+# format  sector  tracks  sectors  block  directory  skew    boot    operating
+# name    size                     size   size       factor  tracks  system
+#
+ibm-3740  128     77      26       1024   64         6       2       p2dos
+4mb-hd    128     1024    32       2048   256        1       0       p2dos
+pcw       512     40       9       1024   64         1       1       3
+# this format uses 15 sectors per track, but 30 per cylinder
+pc1.2m    512     80      30       4096   256        1       0       3
+cf2dd     512     160      9       2048   256        1       1       3
+#amstrad: values are read from super block (special name hardcoded)
+# Royal alphatronic
+# setfdprm /dev/fd1 dd ssize=256 cyl=40 sect=16 head=2
+alpha     256     40      32       2048   128        1       2       2.2
+# Apple II CP/M skew o Apple II DOS 3.3 skew
+apple-do  256     35      16       1024   64         0       3       2.2
+# Apple II CP/M skew o Apple II PRODOS skew
+apple-po  256     35      16       1024   64         0       3       2.2
