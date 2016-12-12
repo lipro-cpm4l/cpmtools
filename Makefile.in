@@ -91,7 +91,7 @@ install:	all
 		$(INSTALL) -s -m 755 mkfs.cpm $(DESTDIR)$(BINDIR)/mkfs.cpm
 		$(INSTALL) -s -m 755 fsck.cpm $(DESTDIR)$(BINDIR)/fsck.cpm
 		[ "$(FSED_CPM)" == '' ] || $(INSTALL) -s -m 755 fsed.cpm $(DESTDIR)$(BINDIR)/fsed.cpm
-		$(INSTALL_DATA) diskdefs $(DESTDIR)@datarootdir@/diskdefs
+		$(INSTALL_DATA) diskdefs $(DESTDIR)$(datarootdir)/diskdefs
 		$(INSTALL_DATA) cpmls.1 $(DESTDIR)$(MANDIR)/man1/cpmls.1
 		$(INSTALL_DATA) cpmcp.1 $(DESTDIR)$(MANDIR)/man1/cpmcp.1
 		$(INSTALL_DATA) cpmrm.1 $(DESTDIR)$(MANDIR)/man1/cpmrm.1
