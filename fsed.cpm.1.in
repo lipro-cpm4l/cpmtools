@@ -1,8 +1,8 @@
 .TH FSED.CPM 1 "@UPDATED@" "CP/M tools" "User commands"
-.SH NAME ..\"{{{roff}}}\"{{{
+.SH NAME \"{{{roff}}}\"{{{
 fsed.cpm \- edit a CP/M file system
 .\"}}}
-.SH SYNOPSIS .\"{{{
+.SH SYNOPSIS \"{{{
 .ad l
 .B fsed.cpm
 .RB [ \-f
@@ -10,29 +10,29 @@ fsed.cpm \- edit a CP/M file system
 .I image
 .ad b
 .\"}}}
-.SH DESCRIPTION .\"{{{
+.SH DESCRIPTION \"{{{
 \fBfsed.cpm\fP edits a CP/M file system on an image file or device.
 It knows about the system, directory and data area, using sector skew on
 the last two.  Directory entries are decoded.  The interactive usage is
 self-explanatory.
 .\"}}}
-.SH OPTIONS .\"{{{
+.SH OPTIONS \"{{{
 .IP "\fB\-f\fP \fIformat\fP"
 Use the given CP/M disk \fIformat\fP instead of the default format.
 .IP "\fB\-T\fP \fIlibdsk-type\fP"
 libdsk driver type, e.g. \fBtele\fP for Teledisk images or \fBraw\fP for raw images 
 (requires building cpmtools with support for libdsk).
 .\"}}}
-.SH "RETURN VALUE" .\"{{{
+.SH "RETURN VALUE" \"{{{
 Upon successful completion, exit code 0 is returned.
 .\"}}}
-.SH ERRORS .\"{{{
+.SH ERRORS \"{{{
 Any errors are indicated by exit code 1.
 .\"}}}
 .SH ENVIRONMENT \"{{{
 CPMTOOLSFMT     Default format
 .\"}}}
-.SH FILES .\"{{{
+.SH FILES \"{{{
 @DATADIR@/diskdefs	CP/M disk format definitions
 .\"}}}
 .SH AUTHORS \"{{{
@@ -54,7 +54,7 @@ You should have received a copy of the GNU General Public License along
 with this program.  If not, write to the Free Software Foundation, Inc.,
 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 .\"}}}
-.SH "SEE ALSO" .\"{{{
+.SH "SEE ALSO" \"{{{
 .IR fsck.cpm (1),
 .IR mkfs.cpm (1),
 .IR cpmls (1),
