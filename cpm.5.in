@@ -6,6 +6,22 @@
 cpm \- CP/M disk and file system format
 .\"}}}
 .SH DESCRIPTION \"{{{
+.SS "Format descrptions" \"{{{
+CP/M format may be specified by either the format name in a
+diskdefs file, or by including the entire "diskdef" format.
+For example:
+.RS
+.sp
+-f name
+.br
+-f `cat mydiskdef`
+.br
+-f "diskdef; seclen 512; tracks 512; ... end"
+.sp
+.RE
+A single diskdef must not begin with a comment, in other words it must
+begin with "diskdef". The name is not required.
+.\"}}}
 .SS "Characteristic sizes" \"{{{
 Each CP/M disk format is described by the following specific sizes:
 .RS
