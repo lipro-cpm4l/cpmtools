@@ -718,7 +718,20 @@ diskdef lobo3
   os 3
 end
 
-# PRO CP/M RZ50 DZ format (Perhaps only 79 tracks should be used?)
+# DEC VT-180 'Robin' (CP/M); works with disks available on Bitsavers (http://bitsavers.org/pdf/dec/terminal/vt180/dskimage/)
+diskdef vt180
+   seclen 512
+   tracks 40
+   sectrk 9
+   blocksize 1024
+   maxdir 64
+   skew 2
+   os 2.2
+   boottrk 2
+   logicalextents 1
+end
+
+# DEC Rainbow-100 CP/M disks; also DEC PRO CP/M RZ50 DZ format (Perhaps only 79 tracks should be used?)
 diskdef dec_pro
   seclen 512
   tracks 80
