@@ -106,7 +106,7 @@ struct cpmStat
 #define CPMFS_DS_DATES   (0x1<<3) /* has datestamper timestamps   */
 #define CPMFS_EXACT_SIZE (0x1<<4) /* has reverse exact file size  */
 
-#define CPMFS_DR22  0
+#define CPMFS_DR22  (CPMFS_HI_USER)
 #define CPMFS_P2DOS (CPMFS_CPM3_DATES|CPMFS_HI_USER)
 #define CPMFS_DR3   (CPMFS_CPM3_DATES|CPMFS_CPM3_OTHER|CPMFS_HI_USER)
 #define CPMFS_ISX   (CPMFS_EXACT_SIZE)
