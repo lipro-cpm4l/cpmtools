@@ -160,7 +160,7 @@ static void data(struct cpmSuperBlock *sb, const char *buf, unsigned long int po
   {
     move(4+(i>>4),(i&0x0f)*3+!!(i&0x8)); printw("%02x",buf[i+offset]&0xff);
     if (pos%sb->secLength==i+offset) attron(A_REVERSE);
-    move(4+(i>>4),50+(i&0x0f)); printw("%c",isprint(buf[i+offset]) ? buf[i+offset] : '.');
+    move(4+(i>>4),50+(i&0x0f)); printw("%c",isprint((unsigned char)buf[i+offset]) ? buf[i+offset] : '.');
     attroff(A_REVERSE);
   }
   move(4+((pos&0x7f)>>4),((pos&0x7f)&0x0f)*3+!!((pos&0x7f)&0x8)+1);

@@ -166,7 +166,8 @@ static void old3dir(char **dirent, int entries, struct cpmInode *ino)
           {
             if (user) putchar('\n');
             printf("Directory For Drive A:  User %2.1d\n\n",user);
-            printf("    Name     Bytes   Recs   Attributes   Prot      Update          Create\n");
+            printf("    Name     Bytes   Recs   Attributes   Prot      Update          %s\n",
+		ino->sb->cnotatime ? "Create" : "Access");
             printf("------------ ------ ------ ------------ ------ --------------  --------------\n\n");
           }
           announce=2;
@@ -199,10 +200,15 @@ static void old3dir(char **dirent, int entries, struct cpmInode *ino)
             tmp=localtime(&statbuf.mtime);
             printf("%02d/%02d/%02d %02d:%02d  ",tmp->tm_mon+1,tmp->tm_mday,tmp->tm_year%100,tmp->tm_hour,tmp->tm_min);
           }
-          else if (statbuf.ctime) printf("                ");
-          if (statbuf.ctime)
+          else printf("                ");
+          if (ino->sb->cnotatime && statbuf.ctime)
           {
             tmp=localtime(&statbuf.ctime);
+            printf("%02d/%02d/%02d %02d:%02d",tmp->tm_mon+1,tmp->tm_mday,tmp->tm_year%100,tmp->tm_hour,tmp->tm_min);
+          }
+          else if (!ino->sb->cnotatime && statbuf.atime)
+          {
+            tmp=localtime(&statbuf.atime);
             printf("%02d/%02d/%02d %02d:%02d",tmp->tm_mon+1,tmp->tm_mday,tmp->tm_year%100,tmp->tm_hour,tmp->tm_min);
           }
           putchar('\n');

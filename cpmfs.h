@@ -100,13 +100,17 @@ struct cpmStat
   time_t ctime;
 };
 
+/* Note: CPMFS_HI_USER should be split for systems with user numbers
+ * up to 31 and CP/M 3, which uses them, but for password entries and
+ * not for files.
+ */
 #define CPMFS_HI_USER    (0x1<<0) /* has user numbers up to 31    */
 #define CPMFS_CPM3_DATES (0x1<<1) /* has CP/M+ style time stamps  */
 #define CPMFS_CPM3_OTHER (0x1<<2) /* has passwords and disc label */
 #define CPMFS_DS_DATES   (0x1<<3) /* has datestamper timestamps   */
 #define CPMFS_EXACT_SIZE (0x1<<4) /* has reverse exact file size  */
 
-#define CPMFS_DR22  0
+#define CPMFS_DR22  (CPMFS_HI_USER)
 #define CPMFS_P2DOS (CPMFS_CPM3_DATES|CPMFS_HI_USER)
 #define CPMFS_DR3   (CPMFS_CPM3_DATES|CPMFS_CPM3_OTHER|CPMFS_HI_USER)
 #define CPMFS_ISX   (CPMFS_EXACT_SIZE)
@@ -144,10 +148,12 @@ struct cpmSuperBlock
   int type;
   int size;
   int extents; /* logical extents per physical extent */
+  int *skewtab;
+  char libdskGeometry[256];
+
   struct PhysDirectoryEntry *dir;
   int alvSize;
   int *alv;
-  int *skewtab;
   int cnotatime;
   char *label;
   size_t labelLength;
@@ -157,7 +163,6 @@ struct cpmSuperBlock
   int dirtyDirectory;
   struct dsDate *ds;
   int dirtyDs;
-  char libdskGeometry[256];
 };
 
 struct cpmStatFS

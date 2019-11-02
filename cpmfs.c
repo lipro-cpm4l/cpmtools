@@ -148,6 +148,7 @@ static time_t cpm2unix_time(int days, int hour, int min)
   tms=*localtime(&lt);
   old_environ=environ;
   environ=gmt_env;
+  tms.tm_isdst=0;
   lt=mktime(&tms);
   lt-=t;
   tms.tm_sec=0;
@@ -263,7 +264,17 @@ static void alvInit(const struct cpmSuperBlock *d)
   memset(d->alv,0,d->alvSize*sizeof(int));
   /*}}}*/
   /* mark directory blocks as used */ /*{{{*/
-  *d->alv=(1<<((d->maxdir*32+d->blksiz-1)/d->blksiz))-1;
+  /* A directory may cover more blocks than an int may hold bits,
+   * so a loop is needed.
+   */
+  for (block=0; block<(d->maxdir*32+d->blksiz-1)/d->blksiz; ++block)
+  {
+    offset = block/INTBITS;
+    d->alv[offset] |= (1<<(block%INTBITS));
+#ifdef CPMFS_DEBUG
+    fprintf(stderr,"alvInit: allocate directory block %d\n",block);
+#endif
+  } 
   /*}}}*/
   for (i=0; i<d->maxdir; ++i) /* mark file blocks as used */ /*{{{*/
   {
@@ -420,7 +431,6 @@ static int findFreeExtent(const struct cpmSuperBlock *drive)
 static void updateTimeStamps(const struct cpmInode *ino, int extent)
 {
   struct PhysDirectoryEntry *date;
-  int i;
   int ca_min,ca_hour,ca_days,u_min,u_hour,u_days;
 
   if (!S_ISREG(ino->mode)) return;
@@ -474,8 +484,6 @@ static void updateTimeStamps(const struct cpmInode *ino, int extent)
 /* updateDsStamps     -- set time in datestamper file            */ /*{{{*/
 static void updateDsStamps(const struct cpmInode *ino, int extent)
 {
-  int yr;
-  struct tm *cpm_time;
   struct dsDate *stamp;
   
   if (!S_ISREG(ino->mode)) return;
@@ -673,6 +681,7 @@ void cpmglob(int optin, int argc, char * const argv[], struct cpmInode *root, in
 static int diskdefReadSuper(struct cpmSuperBlock *d, const char *format)
 {
   char line[256];
+  int ln;
   FILE *fp;
   int insideDef=0,found=0;
 
@@ -683,6 +692,7 @@ static int diskdefReadSuper(struct cpmSuperBlock *d, const char *format)
     fprintf(stderr,"%s: Neither `diskdefs' nor `" DISKDEFS "' could be opened.\n",cmd);
     exit(1);
   }
+  ln=1;
   while (fgets(line,sizeof(line),fp)!=(char*)0)
   {
     int argc;
@@ -712,7 +722,15 @@ static int diskdefReadSuper(struct cpmSuperBlock *d, const char *format)
         if (strcmp(argv[0],"seclen")==0) d->secLength=strtol(argv[1],(char**)0,0);
         else if (strcmp(argv[0],"tracks")==0) d->tracks=strtol(argv[1],(char**)0,0);
         else if (strcmp(argv[0],"sectrk")==0) d->sectrk=strtol(argv[1],(char**)0,0);
-        else if (strcmp(argv[0],"blocksize")==0) d->blksiz=strtol(argv[1],(char**)0,0);
+        else if (strcmp(argv[0],"blocksize")==0)
+        {
+          d->blksiz=strtol(argv[1],(char**)0,0);
+          if (d->blksiz <= 0)
+          {
+            fprintf(stderr,"%s: invalid blocksize `%s' in line %d\n",cmd,argv[1],ln);
+            exit(1);
+          }
+        }
         else if (strcmp(argv[0],"maxdir")==0) d->maxdir=strtol(argv[1],(char**)0,0);
         else if (strcmp(argv[0],"skew")==0) d->skew=strtol(argv[1],(char**)0,0);
         else if (strcmp(argv[0],"skewtab")==0)
@@ -731,7 +749,7 @@ static int diskdefReadSuper(struct cpmSuperBlock *d, const char *format)
               if (pass==1) d->skewtab[sectors]=phys;
               if (end==s)
               {
-                fprintf(stderr,"%s: invalid skewtab `%s' at `%s'\n",cmd,argv[1],s);
+                fprintf(stderr,"%s: invalid skewtab `%s' at `%s' in line %d\n",cmd,argv[1],s,ln);
                 exit(1);
               }
               s=end;
@@ -753,12 +771,12 @@ static int diskdefReadSuper(struct cpmSuperBlock *d, const char *format)
           val = strtol(argv[1],&endptr,10);
           if ((errno==ERANGE && val==LONG_MAX)||(errno!=0 && val<=0))
           {
-            fprintf(stderr,"%s: invalid offset value \"%s\" - %s\n",cmd,argv[1],strerror(errno));
+            fprintf(stderr,"%s: invalid offset value `%s' (%s) in line %d\n",cmd,argv[1],strerror(errno),ln);
             exit(1);
           }
           if (endptr==argv[1])
           {
-            fprintf(stderr,"%s: offset value \"%s\" is not a number\n",cmd,argv[1]);
+            fprintf(stderr,"%s: offset value `%s' is not a number in line %d\n",cmd,argv[1],ln);
             exit(1);
           }
           if (*endptr!='\0')
@@ -775,7 +793,7 @@ static int diskdefReadSuper(struct cpmSuperBlock *d, const char *format)
               case 'T':
                 if (d->sectrk<0||d->tracks<0||d->secLength<0)
                 {
-                  fprintf(stderr,"%s: offset must be specified after sectrk, tracks and secLength\n",cmd);
+                  fprintf(stderr,"%s: offset must be specified after sectrk, tracks and secLength in line %d\n",cmd,ln);
                   exit(1);
                 }
                 multiplier=d->sectrk*d->secLength;
@@ -783,19 +801,19 @@ static int diskdefReadSuper(struct cpmSuperBlock *d, const char *format)
               case 'S':
                 if (d->sectrk<0||d->tracks<0||d->secLength<0)
                 {
-                  fprintf(stderr,"%s: offset must be specified after sectrk, tracks and secLength\n",cmd);
+                  fprintf(stderr,"%s: offset must be specified after sectrk, tracks and secLength in line %d\n",cmd,ln);
                   exit(1);
                 }
                 multiplier=d->secLength;
                 break;
               default:
-                fprintf(stderr,"%s: unknown unit specifier \"%c\"\n",cmd,*endptr);
+                fprintf(stderr,"%s: unknown unit specifier `%c' in line %d\n",cmd,*endptr,ln);
                 exit(1);
             }
           }
           if (val*multiplier>INT_MAX)
           {
-            fprintf(stderr,"%s: effective offset is out of range\n",cmd);
+            fprintf(stderr,"%s: effective offset is out of range in line %d\n",cmd,ln);
             exit(1);
           }
           d->offset=val*multiplier;
@@ -810,7 +828,7 @@ static int diskdefReadSuper(struct cpmSuperBlock *d, const char *format)
           else if (strcmp(argv[1],"zsys" )==0) d->type|=CPMFS_ZSYS;
           else 
           {
-            fprintf(stderr, "%s: invalid OS type `%s'\n", cmd, argv[1]);
+            fprintf(stderr, "%s: invalid OS type `%s' in line %d\n",cmd,argv[1],ln);
             exit(1);
           }
         }
@@ -822,7 +840,7 @@ static int diskdefReadSuper(struct cpmSuperBlock *d, const char *format)
       }
       else if (argc>0 && argv[0][0]!='#' && argv[0][0]!=';')
       {
-        fprintf(stderr,"%s: invalid keyword `%s'\n",cmd,argv[0]);
+        fprintf(stderr,"%s: invalid keyword `%s' in line %d\n",cmd,argv[0],ln);
         exit(1);
       }
     }
@@ -834,10 +852,11 @@ static int diskdefReadSuper(struct cpmSuperBlock *d, const char *format)
       d->type=CPMFS_DR22;
       d->skewtab=(int*)0;
       d->offset=0;
-      d->boottrk=d->secLength=d->sectrk=d->tracks=-1;
+      d->blksiz=d->boottrk=d->secLength=d->sectrk=d->tracks=-1;
       d->libdskGeometry[0] = 0;
       if (strcmp(argv[1],format)==0) found=1;
     }
+    ++ln;
   }
   fclose(fp);
   if (!found)
@@ -863,6 +882,11 @@ static int diskdefReadSuper(struct cpmSuperBlock *d, const char *format)
   if (d->tracks<0)
   {
     fprintf(stderr, "%s: tracks parameter invalid or missing from diskdef\n",cmd);
+    exit(1);
+  }
+  if (d->blksiz<0)
+  {
+    fprintf(stderr, "%s: blocksize parameter invalid or missing from diskdef\n",cmd);
     exit(1);
   }
   return 0;
@@ -1286,14 +1310,17 @@ int cpmNamei(const struct cpmInode *dir, const char *filename, struct cpmInode *
     {
       if (dir->sb->dir[highestExt].pointers[2*block] || dir->sb->dir[highestExt].pointers[2*block+1]) break;
     }
-    if (dir->sb->dir[highestExt].blkcnt) i->size+=((dir->sb->dir[highestExt].blkcnt&0xff)-1)*128;
-    if (dir->sb->type & CPMFS_ISX)
+    if (dir->sb->dir[highestExt].blkcnt)
     {
-      i->size += (128 - dir->sb->dir[highestExt].lrc);
-    }
-    else
-    {
-      i->size+=dir->sb->dir[highestExt].lrc ? (dir->sb->dir[highestExt].lrc&0xff) : 128;
+      i->size+=((dir->sb->dir[highestExt].blkcnt&0xff)-1)*128;
+      if (dir->sb->type & CPMFS_ISX)
+      {
+        i->size += (128 - dir->sb->dir[highestExt].lrc);
+      }
+      else
+      {
+        i->size+=dir->sb->dir[highestExt].lrc ? (dir->sb->dir[highestExt].lrc&0xff) : 128;
+      }
     }
 #ifdef CPMFS_DEBUG
     fprintf(stderr,"cpmNamei: size=%ld\n",(long)i->size);

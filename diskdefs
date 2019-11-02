@@ -20,6 +20,17 @@ diskdef 4mb-hd
   os p2dos
 end
 
+diskdef sdcard
+  seclen 512
+  tracks 256
+  sectrk 64
+  blocksize 8192
+  maxdir 256
+  skew 0
+  boottrk 1
+  os 2.2
+end
+
 diskdef pcw
   seclen 512
   tracks 40
@@ -493,7 +504,8 @@ diskdef dreamdisk80
   os 2.2
 end
 
-diskdef rc759
+# RC75x series
+diskdef rc75x
   seclen 1024
   tracks 154
   sectrk 8
@@ -766,6 +778,54 @@ diskdef heassdd8
 # DENSITY MFM ,LOW 
 end
 
+# ZEN7  Zenith Z-100 - SSDD 48 tpi 5.25" - 512 x 8
+diskdef zen7
+  seclen 512
+  tracks 40
+  sectrk 8
+  blocksize 1024
+  maxdir 128
+  skew 1
+  boottrk 2
+  os 2.2
+end
+
+# ZEN8  Zenith Z-100 - DSDD 48 tpi 5.25" - 512 x 8
+diskdef zen8
+  seclen 512
+  tracks 80
+  sectrk 8
+  blocksize 2048
+  maxdir 256
+  skew 1
+  boottrk 2
+  os 2.2
+end
+
+# ZEN9  Zenith Z-100 - SSSD 8" - 128 x 26
+diskdef zen9
+  seclen 128
+  tracks 77
+  sectrk 26
+  blocksize 1024
+  maxdir 64
+  skew 6
+  boottrk 2
+  os 2.2
+end
+
+# ZENA  Zenith Z-100 - SSDD 8" - 256 x 26
+diskdef zena
+  seclen 256
+  tracks 77
+  sectrk 26
+  blocksize 2048
+  maxdir 128
+  skew 9
+  boottrk 2
+  os 2.2
+end
+
 # Morrow Designs Micro-Decision         DOUBLE
 # 64k CP/M Vers. 2.2 Rev.2.3            SIDED
 # Copyright '76, '77, '78, '79, '80
@@ -819,38 +879,6 @@ diskdef osb1sssd
 # BSH 4 BLM 15 EXM 1 DSM 45 DRM 63 AL0 080H AL1 0 OFS 3
 end
 
-# BEGIN ampdsdd  Ampro - DSDD 48 tpi 5.25" - 512 x 10
-# Test OK - image size = 409,600, from Don Maslin's archive
-diskdef ampdsdd
-  seclen 1024
-  tracks 80
-  sectrk 5
-  blocksize 2048
-  maxdir 128
-  skew 0
-  boottrk 2
-  os 2.2
-  libdsk:format ampro400d
-# DENSITY MFM ,LOW 
-# BSH 4 BLM 15 EXM 1 DSM 194 DRM 127 AL0 0C0H AL1 0 OFS 2
-end
-
-# BEGIN ampdsdd80  Ampro - DSDD 96 tpi 5.25" - 512 x 10
-# Test OK - image size = 819,200, from Don Maslin's archive
-diskdef ampdsdd80
-  seclen 1024
-  tracks 160
-  sectrk 5
-  blocksize 2048
-  maxdir 128
-  skew 0
-  boottrk 2
-  os 2.2
-  libdsk:format ampro800
-# DENSITY MFM ,LOW 
-# BSH 4 BLM 15 EXM 1 DSM 194 DRM 127 AL0 0C0H AL1 0 OFS 2
-end
-
 # BEGIN altdsdd  Altos - DSDD 5" - 512 x 9
 # Test OK - both CP/M and MP/M - image size = 737,280, from Dave Dunfield
 diskdef altdsdd
@@ -866,6 +894,8 @@ diskdef altdsdd
 # BSH 5 BLM 31 EXM 3 DSM 176 DRM 176 AL0 0C0H AL1 0 OFS 2
 end
 
+# All TRS formats added by Larry Kraemer
+
 # BEGIN trsomsssd  TRS-80 Model 1, Omikron CP/M - SSSD 48 tpi 5.25" - 128 x 18
 # Test OK - image size = 80,640, from TRS-80 Yahoo Group posting
 diskdef trsomsssd
@@ -879,6 +909,304 @@ diskdef trsomsssd
   os 2.2
 # DENSITY FM ,LOW 
 # BSH 3 BLM 7 EXM 0 DSM 71 DRM 63 AL0 0C0H AL1 0 OFS 3
+end
+
+diskdef trsg         #= TRS-80 Model 4,4P Montezuma System 170K - SSDD 48 tpi 5.25"
+  seclen 256         #= Sectors xx,256
+  tracks 40          #= (Cylinders * Sides) = 40*1 = 40
+# sides alt          #= Order of Cylinders  = alt, outout, outback
+  sectrk 18          #= Sectors 18,xxx
+  blocksize 2048     #= (128*(BLM+1)) =  7=1024, 15=2048, 31=4096, 63=8192
+  maxdir 128         #= (DRM+1) = 128
+#  datarate DD        #= DENSITY SD, DD, HD, or ED
+#  FM NO              #= Format YES = FM, or NO = MFM
+  skew 2             #= [0..8] try 2
+  boottrk 2          #= OFS = 2
+#                    #= 2, 2.2, or 3 (NO comment on next line)
+  os 2.2
+end
+
+diskdef trsh         #= TRS-80 Model 4,4P Montezuma Data 200K - SSDD 48 tpi 5.25"
+  seclen 512         #= Sectors xx,512
+  tracks 40          #= (Cylinders * Sides) = 40*1 = 40
+# sides alt          #= Order of Cylinders  = alt, outout, outback
+  sectrk 10          #= Sectors 10,xxx
+  blocksize 2048     #= (128*(BLM+1)) =  7=1024, 15=2048, 31=4096, 63=8192
+  maxdir 128         #= (DRM+1) = 128
+#  datarate DD        #= DENSITY SD, DD, HD, or ED
+#  FM NO              #= Format YES = FM, or NO = MFM
+  skew 2             #= [0..8] try 2
+  boottrk 0          #= OFS = 0
+#                    #= 2, 2.2, or 3 (NO comment on next line)
+  os 2.2
+end
+
+diskdef trsi         #= TRS-80 Model 4,4P Montezuma System 350K - DSDD 48 tpi 5.25"
+  seclen 256         #= Sectors xx,256
+  tracks 80          #= (Cylinders * Sides) = 40*2 = 80
+#  sides outout       #= Order of Cylinders  = alt, outout, outback
+  sectrk 18          #= Sectors 18,xxx
+  blocksize 2048     #= (128*(BLM+1)) =  7=1024, 15=2048, 31=4096, 63=8192
+  maxdir 128         #= (DRM+1) = 128
+#  datarate DD        #= DENSITY SD, DD, HD, or ED
+#  FM NO              #= Format YES = FM, or NO = MFM
+  skew 2             #= [0..8] try 2
+  boottrk 2          #= OFS = 2
+#                    #= 2, 2.2, or 3 (NO comment on next line)
+  os 2.2
+#end
+
+diskdef trsj         #= TRS-80 Model 4,4P Montezuma Data 400K - DSDD 48 tpi 5.25"
+  seclen 512         #= Sectors xx,512
+  tracks 80          #= (Cylinders * Sides) = 40*2 = 80
+#  sides outout       #= Order of Cylinders  = alt, outout, outback
+  sectrk 10          #= Sectors 10,xxx
+  blocksize 2048     #= (128*(BLM+1)) =  7=1024, 15=2048, 31=4096, 63=8192
+  maxdir 128         #= (DRM+1) = 128
+#  datarate DD        #= DENSITY SD, DD, HD, or ED
+#  FM NO              #= Format YES = FM, or NO = MFM
+  skew 2             #= [0..8] try 2
+  boottrk 0          #= OFS = 0
+#                    #= 2, 2.2, or 3 (NO comment on next line)
+  os 2.2
+end
+
+diskdef trsk         #= TRS-80 Model 4,4P Montezuma System 350K - SSDD 96 tpi 5.25"
+  seclen 256         #= Sectors xx,256
+  tracks 80          #= (Cylinders * Sides) = 80*1 = 80
+# sides alt          #= Order of Cylinders  = alt, outout, outback
+  sectrk 18          #= Sectors 18,xxx
+  blocksize 2048     #= (128*(BLM+1)) =  7=1024, 15=2048, 31=4096, 63=8192
+  maxdir 128         #= (DRM+1) = 128
+#  datarate DD        #= DENSITY SD, DD, HD, or ED
+#  FM NO              #= Format YES = FM, or NO = MFM
+  skew 2             #= [0..8] try 2
+  boottrk 2          #= OFS = 2
+#                    #= 2, 2.2, or 3 (NO comment on next line)
+  os 2.2
+end
+
+diskdef trsl         #= TRS-80 Model 4,4P Montezuma Data 400K - SSDD 96 tpi 5.25"
+  seclen 512         #= Sectors xx,512
+  tracks 80          #= (Cylinders * Sides) = 80*1 = 80
+# sides alt          #= Order of Cylinders  = alt, outout, outback
+  sectrk 10          #= Sectors 10,xxx
+  blocksize 2048     #= (128*(BLM+1)) =  7=1024, 15=2048, 31=4096, 63=8192
+  maxdir 128         #= (DRM+1) = 128
+#  datarate DD        #= DENSITY SD, DD, HD, or ED
+#  FM NO              #= Format YES = FM, or NO = MFM
+  skew 2             #= [0..8] try 2
+  boottrk 0          #= OFS = 0
+#                    #= 2, 2.2, or 3 (NO comment on next line)
+  os 2.2
+end
+
+diskdef trsm         #= TRS-80 Model 4,4P Montezuma System 710K - DSDD 96 tpi 5.25"
+  seclen 256         #= Sectors xx,256
+  tracks 160         #= (Cylinders * Sides) = 80*2 = 160
+#  sides alt          #= Order of Cylinders  = alt, outout, outback
+  sectrk 18          #= Sectors 18,xxx
+  blocksize 2048     #= (128*(BLM+1)) =  7=1024, 15=2048, 31=4096, 63=8192
+  maxdir 128         #= (DRM+1) = 128
+#  datarate DD        #= DENSITY SD, DD, HD, or ED
+#  FM NO              #= Format YES = FM, or NO = MFM
+  skew 2             #= [0..8] try 2
+  boottrk 2          #= OFS = 2
+#                    #= 2, 2.2, or 3 (NO comment on next line)
+  os 2.2
+end
+
+diskdef trsn         #= TRS-80 Model 4,4P Montezuma Data 800K - DSDD 96 tpi 5.25"
+  seclen 512         #= Sectors xx,512
+  tracks 160         #= (Cylinders * Sides) = 80*2 = 160
+#  sides alt          #= Order of Cylinders  = alt, outout, outback
+  sectrk 10          #= Sectors 10,xxx
+  blocksize 2048     #= (128*(BLM+1)) =  7=1024, 15=2048, 31=4096, 63=8192
+  maxdir 128         #= (DRM+1) = 128
+#  datarate DD        #= DENSITY SD, DD, HD, or ED
+#  FM NO              #= Format YES = FM, or NO = MFM
+  skew 0             #= [0..8] try 2
+  boottrk 0          #= OFS = 0
+#                    #= 2, 2.2, or 3 (NO comment on next line)
+  os 2.2
+end
+
+diskdef trso         #= TRS-80 Model 4,4P Montezuma Extend System 190K - SSDD 48 tpi 5.25"
+  seclen 512         #= Sectors xx,512
+  tracks 40          #= (Cylinders * Sides) = 40*1 = 40
+# sides alt          #= Order of Cylinders  = alt, outout, outback
+  sectrk 10          #= Sectors 10,xxx
+  blocksize 2048     #= (128*(BLM+1)) =  7=1024, 15=2048, 31=4096, 63=8192
+  maxdir 128         #= (DRM+1) = 128
+#  datarate DD        #= DENSITY SD, DD, HD, or ED
+#  FM NO              #= Format YES = FM, or NO = MFM
+  skew 2             #= [0..8] try x
+  boottrk 2          #= OFS = 2
+#                    #= 2, 2.2, or 3 (NO comment on next line)
+  os 2.2
+end
+
+diskdef trsp         #= TRS-80 Model 4,4P Montezuma Extend System 390K - DSDD 48 tpi 5.25"
+  seclen 512         #= Sectors xx,512
+  tracks 80          #= (Cylinders * Sides) = 40*2 = 80
+#  sides alt          #= Order of Cylinders  = alt, outout, outback
+  sectrk 10          #= Sectors 10,xxx
+  blocksize 2048     #= (128*(BLM+1)) =  7=1024, 15=2048, 31=4096, 63=8192
+  maxdir 128         #= (DRM+1) = 128
+#  datarate DD        #= DENSITY SD, DD, HD, or ED
+#  FM NO              #= Format YES = FM, or NO = MFM
+  skew 2             #= [0..8] try 2
+  boottrk 2          #= OFS = 2
+#                    #= 2, 2.2, or 3 (NO comment on next line)
+  os 2.2
+end
+
+diskdef trsq         #= TRS-80 Model 4,4P Montezuma Extend System 390K - SSDD 96 tpi 5.25"
+  seclen 512         #= Sectors xx,512
+  tracks 80          #= (Cylinders * Sides) = 80*1 = 80
+# sides alt          #= Order of Cylinders  = alt, outout, outback
+  sectrk 10          #= Sectors 10,xxx
+  blocksize 2048     #= (128*(BLM+1)) =  7=1024, 15=2048, 31=4096, 63=8192
+  maxdir 128         #= (DRM+1) = 128
+#  datarate DD        #= DENSITY SD, DD, HD, or ED
+#  FM NO              #= Format YES = FM, or NO = MFM
+  skew 2             #= [0..8] try 2
+  boottrk 2          #= OFS = 2
+#                    #= 2, 2.2, or 3 (NO comment on next line)
+  os 2.2
+end
+
+diskdef trsr         #= TRS-80 Model 4,4P Montezuma Extend System 790K - DSDD 96 tpi 5.25"
+  seclen 512         #= Sectors xx,512
+  tracks 160         #= (Cylinders * Sides) = 80*2 = 160
+#  sides alt          #= Order of Cylinders  = alt, outout, outback
+  sectrk 10          #= Sectors 10,xxx
+  blocksize 2048     #= (128*(BLM+1)) =  7=1024, 15=2048, 31=4096, 63=8192
+  maxdir 128         #= (DRM+1) = 128
+#  datarate DD        #= DENSITY SD, DD, HD, or ED
+#  FM NO              #= Format YES = FM, or NO = MFM
+  skew 2             #= [0..8] try 2
+  boottrk 2          #= OFS = 2
+#                    #= 2, 2.2, or 3 (NO comment on next line)
+  os 2.2
+end
+
+diskdef trss         #= TRS-80 Model 4,4P Montezuma Super Data 220K - SSDD 48 tpi 5.25"
+  seclen 1024        #= Sectors xx,1024
+  tracks 40          #= (Cylinders * Sides) = 40*1 = 40
+# sides alt          #= Order of Cylinders  = alt, outout, outback
+  sectrk 6           #= Sectors 6,xxx
+  blocksize 2048     #= (128*(BLM+1)) =  7=1024, 15=2048, 31=4096, 63=8192
+  maxdir 128         #= (DRM+1) = 128
+#  datarate DD        #= DENSITY SD, DD, HD, or ED
+#  FM NO              #= Format YES = FM, or NO = MFM
+  skew 2             #= [0..8] try 2
+  boottrk 0          #= OFS = 0
+#                    #= 2, 2.2, or 3 (NO comment on next line)
+  os 2.2
+end
+
+diskdef trst         #= TRS-80 Model 4,4P Montezuma Super Data 440K - DSDD 48 tpi 5.25"
+  seclen 1024        #= Sectors xx,1024
+  tracks 80          #= (Cylinders * Sides) = 40*2 = 80
+#  sides outout       #= Order of Cylinders  = alt, outout, outback
+  sectrk 6           #= Sectors 6,xxx
+  blocksize 2048     #= (128*(BLM+1)) =  7=1024, 15=2048, 31=4096, 63=8192
+  maxdir 128         #= (DRM+1) = 128
+#  datarate DD        #= DENSITY SD, DD, HD, or ED
+#  FM NO              #= Format YES = FM, or NO = MFM
+  skew 2             #= [0..8] try 2
+  boottrk 0          #= OFS = 0
+#                    #= 2, 2.2, or 3 (NO comment on next line)
+  os 2.2
+end
+
+diskdef trsu         #= TRS-80 Model 4,4P Montezuma Super Data 440K - SSDD 96 tpi 5.25"
+  seclen 1024        #= Sectors xx,1024
+  tracks 80          #= (Cylinders * Sides) = 80*1 = 80
+# sides alt          #= Order of Cylinders  = alt, outout, outback
+  sectrk 6           #= Sectors 6,xxx
+  blocksize 2048     #= (128*(BLM+1)) =  7=1024, 15=2048, 31=4096, 63=8192
+  maxdir 128         #= (DRM+1) = 128
+#  datarate DD        #= DENSITY SD, DD, HD, or ED
+#  FM NO              #= Format YES = FM, or NO = MFM
+  skew 2             #= [0..8] try 2
+  boottrk 0          #= OFS = 0
+#                    #= 2, 2.2, or 3 (NO comment on next line)
+  os 2.2
+end
+
+diskdef trsv         #= TRS-80 Model 4,4P Montezuma Super Data 880K - DSDD 96 tpi 5.25"
+  seclen 1024        #= Sectors xx,1024
+  tracks 160         #= (Cylinders * Sides) = 80*2 = 160
+#  sides alt          #= Order of Cylinders  = alt, outout, outback
+  sectrk 6           #= Sectors 6,xxx
+  blocksize 2048     #= (128*(BLM+1)) =  7=1024, 15=2048, 31=4096, 63=8192
+  maxdir 128         #= (DRM+1) = 128
+#  datarate DD        #= DENSITY SD, DD, HD, or ED
+#  FM NO              #= Format YES = FM, or NO = MFM
+  skew 2             #= [0..8] try x
+  boottrk 0          #= OFS = 0
+#                    #= 2, 2.2, or 3 (NO comment on next line)
+  os 2.2
+end
+
+diskdef trsw         #= TRS-80 Model 4,4P Montezuma System 400K - SSDD 96 tpi 3.5"
+  seclen 512         #= Sectors xx,512
+  tracks 80          #= (Cylinders * Sides) = 80*1 = 80
+# sides alt          #= Order of Cylinders  = alt, outout, outback
+  sectrk 10          #= Sectors 10,xxx
+  blocksize 2048     #= (128*(BLM+1)) =  7=1024, 15=2048, 31=4096, 63=8192
+  maxdir 128         #= (DRM+1) = 128
+#  datarate DD        #= DENSITY SD, DD, HD, or ED
+#  FM NO              #= Format YES = FM, or NO = MFM
+  skew 2             #= [0..8] try 2
+  boottrk 0          #= OFS = 0
+#                    #= 2, 2.2, or 3 (NO comment on next line)
+  os 2.2
+end
+
+#BEGIN TRSE  TRS-80 II/12/16 Aton CP/M - SSHD 8" - 1024 x 8
+diskdef trse
+  seclen 1024
+  tracks 77
+  sectrk 8
+  blocksize 2048
+  maxdir 128
+  datarate DD
+  fm NO
+  skew 3
+  boottrk 0
+  offset 11520
+  os 2.2
+end
+
+# TRSF  TRS-80 II/12/16 Aton CP/M  - DSHD 8" - 1024 x 8
+diskdef trsf
+  seclen 1024
+  tracks 154
+  sides alt
+  sectrk 8
+  blocksize 2048
+  maxdir 192
+  skew 3
+  boottrk 0
+  offset 11520
+  os 2.2
+end
+
+# TRS5  TRS-80, Lifeboat CP/M (1024 bytes/sector) - SSDD 8"
+# The first track is 26 sectors with 128 bytes, the rest are 1024 x 8
+diskdef trs5
+  seclen 1024
+  tracks 75
+  sectrk 8
+  blocksize 2048
+  maxdir 128
+  skew 3
+  boottrk 0
+  os 2.2
+  offset 11520
 end
 
 # Memotech type 03, ie: 3.5" or 5.25", D/S, D/D, S/T
@@ -1392,5 +1720,102 @@ diskdef ampro800
   maxdir 256
   skew 0
   boottrk 2
+  os 2.2
+end
+
+# Ampro - DSDD 48 tpi 5.25" - 512 x 10
+diskdef ampro400d
+  seclen 512
+  tracks 80
+  sectrk 10
+  blocksize 2048
+  maxdir 128
+  skew 0
+  boottrk 2
+  os 2.2
+  libdsk:format ampro400d
+# DENSITY MFM ,LOW 
+# BSH 4 BLM 15 EXM 1 DSM 194 DRM 127 AL0 0C0H AL1 0 OFS 2
+end
+
+# BEGIN ampdsdd80  Ampro - DSDD 96 tpi 5.25" - 512 x 10
+# Test OK - image size = 819,200, from Don Maslin's archive
+diskdef ampdsdd80
+  seclen 1024
+  tracks 160
+  sectrk 5
+  blocksize 2048
+  maxdir 128
+  skew 0
+  boottrk 2
+  os 2.2
+  libdsk:format ampro800
+# DENSITY MFM ,LOW 
+# BSH 4 BLM 15 EXM 1 DSM 194 DRM 127 AL0 0C0H AL1 0 OFS 2
+end
+
+# ALTAIRZ80 SIMH *dsk 8MB Harddisk (Type AZ80 HDSK)
+diskdef 8megAltairSIMH
+  seclen 128
+  tracks 2048
+  sectrk 32
+  blocksize 4096
+  maxdir 1024
+  skew 0
+  boottrk 6
+  os 2.2
+end
+
+# ALTAIRZ80 SIMH *dsk MITS 88-DISK 137 Byte/Sektor
+# speedball (copylib) skewtable
+diskdef simh
+  seclen 128
+  tracks 254
+  sectrk 32
+  blocksize 2048
+  maxdir 256
+  skew 17
+  boottrk 6
+  os 2.2
+end
+
+diskdef all1         #= Allen-Bradley Advisor+ - DSDD 3.5"
+  seclen 512         #= Sectors xx,512
+  tracks 160         #= (Cylinders * Sides) = 80*2 = 160
+  sides alt          #= Order of Cylinders  = alt, outout, outback
+  sectrk 8           #= Sectors 8,xxx
+  blocksize 2048     #= (128*(BLM+1)) =  7=1024, 15=2048, 31=4096, 63=8192
+  maxdir 128         #= (DRM+1) = 128
+  datarate DD        #= DENSITY SD, DD, HD, or ED
+  FM NO              #= Format YES = FM, or NO = MFM
+  skew 0             #= [0..8] try x
+  boottrk 1          #= OFS = 1
+#                    #= 2, 2.2, or 3 (NO comment on next line)
+  os 2.2
+end
+
+# COM8  Compupro (Viasyn) 8/16 - SSDD 8" - 1024 x 8
+# IMD RAW format
+diskdef com8
+  seclen 1024
+  tracks 77
+  sectrk 8
+  blocksize 2048
+  maxdir 128
+  skew 3
+  offset 11520
+  boottrk 0
+  os 2.2
+end
+
+# Spectravideo SVI-728 (MSX) with SVI-707 floppy drive
+diskdef svi707
+  seclen 256
+  tracks 40
+  sectrk 17
+  blocksize 2048
+  maxdir 64
+  skew 0
+  boottrk 3
   os 2.2
 end
