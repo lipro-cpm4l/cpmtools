@@ -32,7 +32,9 @@ A block is the smallest allocatable storage unit.  CP/M supports block
 sizes of 1024, 2048, 4096, 8192 and 16384 bytes.  Unfortunately, this
 format specification is not stored on the disk and there are lots of
 formats.  Accessing a block is performed by accessing its sectors, which
-are stored with the given software skew.
+are stored with the given software skew.  \fBcpmtools\fP always counts
+sectors starting with 0, as it deals with logical sectors.  CP/M uses physical
+sectors in the skew table, which often start with 1.
 .\"}}}
 .SS "Device areas" \"{{{
 A CP/M disk contains four areas:
@@ -149,6 +151,8 @@ Rc stores the number of 128 byte records of the last used logical extent.
 Bc stores the number of bytes in the last used record.  The value 0 means
 128 for backward compatibility with CP/M 2.2, which did not support Bc.
 ISX records the number of unused instead of used bytes in Bc.
+This only applies to files with allocated blocks.  For an empty file, no
+block is allocated and Bc 0 has no meaning.
 .\"}}}
 .LP
 .\"{{{ Al     = allocated blocks

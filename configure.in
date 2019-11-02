@@ -1,8 +1,8 @@
 AC_INIT(cpmfs.c)
 AC_CONFIG_HEADER(config.h)
 AC_CANONICAL_HOST
-VERSION=2.20
-UPDATED='October 25, 2014'
+VERSION=2.21
+UPDATED='Jan 23, 2019'
 
 DEVICE="posix"
 
@@ -125,4 +125,4 @@ AC_SUBST(DISKDEFS)
 AC_SUBST(DEFFORMAT)
 AC_SUBST(FSED_CPM)
 AC_SUBST(UPDATED)
-AC_OUTPUT(Makefile cpm.5 cpmchattr.1 cpmchmod.1 cpmcp.1 cpmls.1 cpmrm.1 fsck.cpm.1 fsed.cpm.1 mkfs.cpm.1 )
+AC_OUTPUT(Makefile cpm.5 cpmchattr.1 cpmchmod.1 cpmcp.1 cpmls.1 cpmrm.1 fsck.cpm.1 fsed.cpm.1 mkfs.cpm.1 diskdefs.5)

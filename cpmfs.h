@@ -144,10 +144,12 @@ struct cpmSuperBlock
   int type;
   int size;
   int extents; /* logical extents per physical extent */
+  int *skewtab;
+  char libdskGeometry[256];
+
   struct PhysDirectoryEntry *dir;
   int alvSize;
   int *alv;
-  int *skewtab;
   int cnotatime;
   char *label;
   size_t labelLength;
@@ -157,7 +159,6 @@ struct cpmSuperBlock
   int dirtyDirectory;
   struct dsDate *ds;
   int dirtyDs;
-  char libdskGeometry[256];
 };
 
 struct cpmStatFS

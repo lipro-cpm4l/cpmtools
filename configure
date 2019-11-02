@@ -2272,8 +2272,8 @@ IFS=$ac_save_IFS
 case $host_os in *\ *) host_os=`echo "$host_os" | sed 's/ /-/g'`;; esac
 
 
-VERSION=2.20
-UPDATED='October 25, 2014'
+VERSION=2.21
+UPDATED='Jan 23, 2019'
 
 DEVICE="posix"
 
@@ -4476,7 +4476,7 @@ eval DATADIR=$datadir
 
 
 
-ac_config_files="$ac_config_files Makefile cpm.5 cpmchattr.1 cpmchmod.1 cpmcp.1 cpmls.1 cpmrm.1 fsck.cpm.1 fsed.cpm.1 mkfs.cpm.1"
+ac_config_files="$ac_config_files Makefile cpm.5 cpmchattr.1 cpmchmod.1 cpmcp.1 cpmls.1 cpmrm.1 fsck.cpm.1 fsed.cpm.1 mkfs.cpm.1 diskdefs.5"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -5179,6 +5179,7 @@ do
     "fsck.cpm.1") CONFIG_FILES="$CONFIG_FILES fsck.cpm.1" ;;
     "fsed.cpm.1") CONFIG_FILES="$CONFIG_FILES fsed.cpm.1" ;;
     "mkfs.cpm.1") CONFIG_FILES="$CONFIG_FILES mkfs.cpm.1" ;;
+    "diskdefs.5") CONFIG_FILES="$CONFIG_FILES diskdefs.5" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
   esac

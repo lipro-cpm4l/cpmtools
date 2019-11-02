@@ -1,0 +1,40 @@
+.\" Believe it or not, reportedly there are nroffs which do not know \(en
+.if n .ds en -
+.if t .ds en \(en
+.TH DISKDEFS 5 "@UPDATED@" "CP/M tools" "File formats"
+.SH NAME \"{{{roff}}}\"{{{
+diskdefs \- CP/M disk and file system format definitions
+.\"}}}
+.SH DESCRIPTION \"{{{
+The diskdefs file contains CP/M format descriptions,
+because CP/M in general does not store those in the file system and there are
+no standards of any kind.
+.PP
+A diskdefs file consists of one or more entries of the format:
+.PP
+.nf
+.RS
+\fBdiskdef\fP \fIname\fP
+  \fBseclen\fP \fIsize\fP
+  \fBtracks\fP \fIcount\fP
+  \fBsectrk\fP \fIcount\fP
+  \fBblocksize\fP \fIsize\fP
+  \fBmaxdir\fP \fIcount\fP
+  \fBboottrk\fP \fInumber\fP
+  [\fBskew\fP \fInumber\fP]
+  [\fBskewtab\fP \fIsector\fP[\fB,\fP\fIsector\fP]...]
+  [\fBos\fP \fB2.2\fP|\fB3\fP|\fBisx\fP|\fBp2dos\fP|\fBzsys\fP]
+  [\fBoffset\fP \fIsize\fP]
+  [\fBlogicalextents\fP \fIcount\fP]
+  [\fBlibdsk:format\fP \fIname\fP]
+\fBend\fP
+.RE
+.fi
+.PP
+\fBskew\fP and \fBskewtab\fP must only be used exclusively.
+.PP
+Comments are marked with a leading hash or semicolon and extend to the end of the line.
+.\"}}}
+.SH "SEE ALSO" \"{{{
+.IR cpm (5)
+.\"}}}
