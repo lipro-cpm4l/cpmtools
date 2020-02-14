@@ -1,5 +1,5 @@
-[![Build status](https://ci.appveyor.com/api/projects/status/2ogybcn80lyv9rj2/branch/master?svg=true)](https://ci.appveyor.com/project/rexut/cpmtools/branch/master)
-[![Build Status](https://travis-ci.org/lipro-cpm4l/cpmtools.svg?branch=master)](https://travis-ci.org/lipro-cpm4l/cpmtools)
+[![Build status](https://ci.appveyor.com/api/projects/status/2ogybcn80lyv9rj2/branch/cpm4l/cpmtools-2.20?svg=true)](https://ci.appveyor.com/project/rexut/cpmtools/branch/cpm4l/cpmtools-2.20)
+[![Build Status](https://travis-ci.org/lipro-cpm4l/cpmtools.svg?branch=cpm4l%2Fcpmtools-2.20)](https://travis-ci.org/lipro-cpm4l/cpmtools)
 
 cpmtools - Tools to access CP/M file systems
 ============================================
