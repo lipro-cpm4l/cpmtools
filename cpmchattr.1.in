@@ -52,7 +52,7 @@ then sets F1 and Read-Only.
 .TP
 .B m
 Attributes after an m are unset rather than set.  The string "12m34" sets
-atttributes F1 and F2, and unsets F3 and F4.
+attributes F1 and F2, and unsets F3 and F4.
 .\"}}}
 .SH "RETURN VALUE" \"{{{
 Upon successful completion, exit code 0 is returned.
