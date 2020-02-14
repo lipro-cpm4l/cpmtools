@@ -676,27 +676,12 @@ void cpmglob(int optin, int argc, char * const argv[], struct cpmInode *root, in
 }
 /*}}}*/
 
-/* superblock management */
-/* diskdefReadSuper   -- read super block from diskdefs file     */ /*{{{*/
-static int diskdefReadSuper(struct cpmSuperBlock *d, const char *format)
+static int parseLine(struct cpmSuperBlock *d, const char *format, char *line, int ln)
 {
-  char line[256];
-  int ln;
-  FILE *fp;
-  int insideDef=0,found=0;
-
-  d->libdskGeometry[0] = '\0';
-  d->type=0;
-  if ((fp=fopen("diskdefs","r"))==(FILE*)0 && (fp=fopen(DISKDEFS,"r"))==(FILE*)0)
-  {
-    fprintf(stderr,"%s: Neither `diskdefs' nor `" DISKDEFS "' could be opened.\n",cmd);
-    exit(1);
-  }
-  ln=1;
-  while (fgets(line,sizeof(line),fp)!=(char*)0)
-  {
     int argc;
     char *argv[2];
+    static int insideDef=0;
+    static int found = 0;
     char *s;
 
     /* Allow inline comments preceded by ; or # */
@@ -704,6 +689,7 @@ static int diskdefReadSuper(struct cpmSuperBlock *d, const char *format)
     if (s) strcpy(s, "\n");
     s = strchr(line, ';');
     if (s) strcpy(s, "\n");
+    if (line[0] == '\n') return 0;
 
     for (argc=0; argc<1 && (argv[argc]=strtok(argc ? (char*)0 : line," \t\n")); ++argc);
     if ((argv[argc]=strtok((char*)0,"\n"))!=(char*)0) ++argc;
@@ -715,7 +701,7 @@ static int diskdefReadSuper(struct cpmSuperBlock *d, const char *format)
         d->size=(d->secLength*d->sectrk*(d->tracks-d->boottrk))/d->blksiz;
         if (d->extents==0) d->extents=((d->size>=256 ? 8 : 16)*d->blksiz)/16384;
         if (d->extents==0) d->extents=1;
-        if (found) break;
+        if (found) return 1;
       }
       else if (argc==2)
       {
@@ -844,7 +830,8 @@ static int diskdefReadSuper(struct cpmSuperBlock *d, const char *format)
         exit(1);
       }
     }
-    else if (argc==2 && strcmp(argv[0],"diskdef")==0)
+    else if (argc > 0 && strcmp(argv[0],"diskdef")==0 &&
+             (argc==2 || (argc==1 && format==NULL)))
     {
       insideDef=1;
       d->skew=1;
@@ -854,9 +841,50 @@ static int diskdefReadSuper(struct cpmSuperBlock *d, const char *format)
       d->offset=0;
       d->blksiz=d->boottrk=d->secLength=d->sectrk=d->tracks=-1;
       d->libdskGeometry[0] = 0;
-      if (strcmp(argv[1],format)==0) found=1;
+      if (format == NULL) found=1;
+      else if (strcmp(argv[1],format)==0) found=1;
     }
-    ++ln;
+    return 0;
+}
+
+/* superblock management */
+/* inlineReadSuper   -- read super block from diskdefs string     */ /*{{{*/
+static int inlineReadSuper(struct cpmSuperBlock *d, const char *format)
+{
+    int linec;
+    char *linev[16];
+    int l;
+
+    char *fmt = strdup(format);
+    for (linec=0; linec<15 && (linev[linec]=strtok(linec ? (char*)0 : fmt,";\n")); ++linec);
+    if ((linev[linec]=strtok((char*)0,";\n"))!=(char*)0) ++linec;
+    for (l = 0; l < linec; ++l) {
+        parseLine(d, NULL, linev[l], l+1);
+    }
+    return 0;
+}
+
+/* superblock management */
+/* diskdefReadSuper   -- read super block from diskdefs file     */ /*{{{*/
+static int diskdefReadSuper(struct cpmSuperBlock *d, const char *format)
+{
+  char line[256];
+  int ln;
+  FILE *fp;
+  int found=0;
+
+  d->libdskGeometry[0] = '\0';
+  d->type=0;
+  if ((fp=fopen("diskdefs","r"))==(FILE*)0 && (fp=fopen(DISKDEFS,"r"))==(FILE*)0)
+  {
+    fprintf(stderr,"%s: Neither `diskdefs' nor `" DISKDEFS "' could be opened.\n",cmd);
+    exit(1);
+  }
+  ln=1;
+  while (fgets(line,sizeof(line),fp)!=(char*)0)
+  {
+    found = parseLine(d, format, line, ln);
+    if (found) break;
   }
   fclose(fp);
   if (!found)
@@ -889,6 +917,7 @@ static int diskdefReadSuper(struct cpmSuperBlock *d, const char *format)
     fprintf(stderr, "%s: blocksize parameter invalid or missing from diskdef\n",cmd);
     exit(1);
   }
+  ++ln;
   return 0;
 }
 /*}}}*/
@@ -1003,6 +1032,7 @@ int cpmReadSuper(struct cpmSuperBlock *d, struct cpmInode *root, const char *for
   while (s_ifreg && !S_ISREG(s_ifreg)) s_ifreg<<=1;
   assert(s_ifreg);
   if (strcmp(format,"amstrad")==0) amsReadSuper(d,format);
+  else if (strncmp(format,"diskdef",7)==0) inlineReadSuper(d,format);
   else diskdefReadSuper(d,format);
   boo = Device_setGeometry(&d->dev,d->secLength,d->sectrk,d->tracks,d->offset,d->libdskGeometry);
   if (boo) return -1;
