@@ -1426,3 +1426,27 @@ diskdef ampro800
   boottrk 2
   os 2.2
 end
+
+# Intel MDS/22 8" Double Density
+diskdef mds-dd
+  seclen 128
+  tracks 77
+  sectrk 52
+  blocksize 2048
+  maxdir 128
+  skew 0
+  boottrk 2
+  os 2.2
+end
+
+# Intel MDS/22 8" Single Density. Untested.
+diskdef mds-sd
+  seclen 128
+  tracks 77
+  sectrk 26
+  blocksize 1024
+  maxdir 64
+  skew 0
+  boottrk 2
+  os 2.2
+end
