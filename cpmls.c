@@ -61,7 +61,7 @@ static void olddir(char **dirent, int entries)
 	putchar('\n');
     }
 
-    if (announce==2) announce=1;
+    announce=1;
   }
   if (entries==0) printf("No files\n");
 }
