@@ -16,7 +16,10 @@ cpmcp \- copy files from and to CP/M disks
 .RB [ \-f
 .IR format ]
 .RB [ \-p ]
+.RB [ \-s
+.IR c ]
 .RB [ \-t ]
+.RB [ \-u ]
 .I image
 \fIuser\fP\fB:\fP\fIfile\fP ... \fIdirectory\fP
 .br
@@ -32,6 +35,8 @@ cpmcp \- copy files from and to CP/M disks
 .RB [ \-f
 .IR format ]
 .RB [ \-p ]
+.RB [ \-s
+.IR c ]
 .RB [ \-t ]
 .I image
 \fIfile\fP ... \fIuser\fP\fB:\fP
@@ -58,8 +63,14 @@ libdsk driver type, e.g. \fBtele\fP for Teledisk images or \fBraw\fP for raw ima
 .IP \fB\-p\fP
 Preserve time stamps when copying files from CP/M to UNIX (not
 implemented for copying the other way so far).
+.IP "\fB\-s\fP \fIc\fP"
+Replace slashes ('/') in CP/M names with character 'c' in host file names,
+and perform the reverse translation when creating CP/M file names.
 .IP \fB\-t\fP
 Convert text files between CP/M and UNIX conventions.
+.IP \fB\-u\fP
+Use upper-case letters for host file names, instead of the normal
+translation to lower-case.
 .\"}}}
 .SH "RETURN VALUE" \"{{{
 Upon successful completion, exit code 0 is returned.

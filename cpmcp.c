@@ -22,6 +22,8 @@
 const char cmd[]="cpmcp";
 static int text=0;
 static int preserve=0;
+static int upcase=0;
+const char *separator="_";
 
 /**
  * Return the user number.
@@ -112,9 +114,9 @@ static int cpmToUnix(const struct cpmInode *root, const char *src, const char *d
 static void usage(void) /*{{{*/
 {
   fprintf(stderr,"Usage: %s [-f format] [-p] [-t] image user:file file\n",cmd);
-  fprintf(stderr,"       %s [-f format] [-p] [-t] image user:file ... directory\n",cmd);
+  fprintf(stderr,"       %s [-f format] [-p] [-s c] [-t] [-u] image user:file ... directory\n",cmd);
   fprintf(stderr,"       %s [-f format] [-p] [-t] image file user:file\n",cmd);
-  fprintf(stderr,"       %s [-f format] [-p] [-t] image file ... user:\n",cmd);
+  fprintf(stderr,"       %s [-f format] [-p] [-s c] [-t] image file ... user:\n",cmd);
   exit(1);
 }
 /*}}}*/
@@ -136,14 +138,16 @@ int main(int argc, char *argv[])
 
   /* parse options */ /*{{{*/
   if (!(format=getenv("CPMTOOLSFMT"))) format=FORMAT;
-  while ((c=getopt(argc,argv,"T:f:h?pt"))!=EOF) switch(c)
+  while ((c=getopt(argc,argv,"T:f:h?ps:tu"))!=EOF) switch(c)
   {
     case 'T': devopts=optarg; break;
     case 'f': format=optarg; break;
     case 'h':
     case '?': usage(); break;
     case 'p': preserve=1; break;
+    case 's': separator=optarg; break;
     case 't': text=1; break;
+    case 'u': upcase=1; break;
   }
   /*}}}*/
   /* parse arguments */ /*{{{*/
@@ -197,13 +201,20 @@ int main(int argc, char *argv[])
     if (gargc>1 && !todir) usage();
     for (i=0; i<gargc; ++i)
     {
+      char *ptr;
+      char cpmname[8+1+3+1]; /* foobarxy.zzy\0 */
       char dest[_POSIX_PATH_MAX];
 
       if (todir)
       {
         strcpy(dest,last);
         strcat(dest,"/");
-        strcat(dest,gargv[i]+2);
+        strcpy(cpmname,gargv[i]+2);
+        if (upcase) for (ptr=cpmname; *ptr; ++ptr) *ptr=toupper(*ptr);
+        if (*separator && *separator!='/')
+          while((ptr=strchr(cpmname,'/'))!=NULL)
+            *ptr=*separator;
+        strcat(dest,cpmname);
       }
       else strcpy(dest,last);
       if (cpmToUnix(&root,gargv[i],dest)) exitcode=1;
@@ -229,6 +240,7 @@ int main(int argc, char *argv[])
       /*}}}*/
       else
       {
+        char *ptr;
         struct cpmInode ino;
         char cpmname[2+8+1+3+1]; /* 00foobarxy.zzy\0 */
         struct stat st;
@@ -244,6 +256,9 @@ int main(int argc, char *argv[])
         {
           snprintf(cpmname,sizeof(cpmname),"%02d%s",userNumber(argv[argc-1]),strchr(argv[argc-1],':')+1);
         }
+        if (*separator && *separator!='/')
+          while((ptr=strchr(cpmname,*separator))!=NULL)
+            *ptr='/';
         if (cpmCreat(&root,cpmname,&ino,0666)==-1) /* just cry */ /*{{{*/
         {
           fprintf(stderr,"%s: can not create %s: %s\n",cmd,cpmname,boo);
