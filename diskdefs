@@ -1875,3 +1875,15 @@ diskdef mds-sd
   boottrk 2
   os 2.2
 end
+
+# RC2014 - CP/M-IDE default.
+diskdef rc2014-8MB
+ seclen 512
+ tracks 64
+ sectrk 256
+ blocksize 4096
+ maxdir 2048
+ skew 0
+ boottrk -
+ os 2.2
+end
