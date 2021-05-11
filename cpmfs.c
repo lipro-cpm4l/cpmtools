@@ -267,7 +267,7 @@ static void alvInit(const struct cpmSuperBlock *d)
   /* A directory may cover more blocks than an int may hold bits,
    * so a loop is needed.
    */
-  for (block=0; block<(d->maxdir*32+d->blksiz-1)/d->blksiz; ++block)
+  for (block=0; block<d->dirblks; ++block)
   {
     offset = block/INTBITS;
     d->alv[offset] |= (1<<(block%INTBITS));
@@ -718,6 +718,7 @@ static int parseLine(struct cpmSuperBlock *d, const char *format, char *line, in
           }
         }
         else if (strcmp(argv[0],"maxdir")==0) d->maxdir=strtol(argv[1],(char**)0,0);
+        else if (strcmp(argv[0],"dirblks")==0) d->dirblks=strtol(argv[1],(char**)0,0);
         else if (strcmp(argv[0],"skew")==0) d->skew=strtol(argv[1],(char**)0,0);
         else if (strcmp(argv[0],"skewtab")==0)
         {
@@ -1031,9 +1032,21 @@ int cpmReadSuper(struct cpmSuperBlock *d, struct cpmInode *root, const char *for
   assert(s_ifdir);
   while (s_ifreg && !S_ISREG(s_ifreg)) s_ifreg<<=1;
   assert(s_ifreg);
+  /* 'd->dev' is already populated, can't memset 'd' */
+  d->dirblks=0;
+  d->maxdir=0;
   if (strcmp(format,"amstrad")==0) amsReadSuper(d,format);
   else if (strncmp(format,"diskdef",7)==0) inlineReadSuper(d,format);
   else diskdefReadSuper(d,format);
+  /* what if both are 0? */
+  if (d->dirblks == 0)
+  {
+    d->dirblks = (d->maxdir*32+(d->blksiz-1))/d->blksiz;
+  }
+  if (d->maxdir == 0)
+  {
+    d->maxdir = (d->dirblks*d->blksiz)/32;
+  }
   boo = Device_setGeometry(&d->dev,d->secLength,d->sectrk,d->tracks,d->offset,d->libdskGeometry);
   if (boo) return -1;
 
@@ -1398,7 +1411,7 @@ void cpmStatFS(const struct cpmInode *ino, struct cpmStatFS *buf)
   buf->f_bsize=d->blksiz;
   buf->f_blocks=d->size;
   buf->f_bfree=0;
-  buf->f_bused=-(d->maxdir*32+d->blksiz-1)/d->blksiz;
+  buf->f_bused=-(d->dirblks);
   for (i=0; i<d->alvSize; ++i)
   {
     int temp,j;

@@ -83,10 +83,11 @@ static void info(struct cpmSuperBlock *sb, const char *format, const char *image
 
   move(10,0);printw("                 Block size: %d",sb->blksiz);
   move(11,0);printw("Number of directory entries: %d",sb->maxdir);
-  move(12,0);printw("        Logical sector skew: %d",sb->skew);
-  move(13,0);printw("    Number of system tracks: %d",sb->boottrk);
-  move(14,0);printw(" Logical extents per extent: %d",sb->extents);
-  move(15,0);printw("    Allocatable data blocks: %d",sb->size-(sb->maxdir*32+sb->blksiz-1)/sb->blksiz);
+  move(12,0);printw(" Number of directory blocks: %d",sb->dirblks);
+  move(13,0);printw("        Logical sector skew: %d",sb->skew);
+  move(14,0);printw("    Number of system tracks: %d",sb->boottrk);
+  move(15,0);printw(" Logical extents per extent: %d",sb->extents);
+  move(16,0);printw("    Allocatable data blocks: %d",sb->size-sb->dirblks);
 
   msg="Any key to continue";
   move(23,(COLS-strlen(msg))/2); printw(msg);

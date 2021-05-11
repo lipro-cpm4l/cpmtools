@@ -142,6 +142,7 @@ struct cpmSuperBlock
   int sectrk;
   int blksiz;
   int maxdir;
+  int dirblks;
   int skew;
   int boottrk;
   off_t offset;

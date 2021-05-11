@@ -324,6 +324,7 @@ diskdef kpii
   sectrk 10
   blocksize 1024
   maxdir 64
+  dirblks 4
   skew 0
   boottrk 1
   os 2.2
@@ -337,6 +338,7 @@ diskdef kpiv
   sectrk 10
   blocksize 2048
   maxdir 64
+  dirblks 2
   skew 0
   boottrk 1
   os 2.2

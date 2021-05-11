@@ -240,7 +240,7 @@ static int fsck(struct cpmInode *root, const char *image)
       {
         int block,min,max,i;
 
-        min=(sb->maxdir*32+sb->blksiz-1)/sb->blksiz;
+        min=sb->dirblks;
         max=sb->size;
         for (i=0; i<16; ++i)
         {
